@@ -438,14 +438,11 @@ def fetch_google_image(query: str, idx: int) -> Path:
 
 
 def get_slide_image(slide: dict, idx: int) -> Path:
-    """Wählt Bild-Quelle:
-       - solid_color: rein einfarbiger Hintergrund (z.B. '#000000' für schwarz)
-       - local_bg: Datei aus Projekt-Ordner (für Outro-Slides mit fixen Bildern)
-       - google_query: Google Images (echte Personen, spezifische Themen)
-       - ai_render / ai_prompt: Together AI FLUX
+    """Wählt Bild-Quelle mit GRACEFUL FALLBACK:
+       - solid_color, local_bg, google_query → wie konfiguriert
+       - ai_render / ai_prompt: Together AI FLUX (Fallback Pexels bei Fehler/NSFW)
        - sonst: Pexels (Standard für Lifestyle)"""
     if slide.get("solid_color"):
-        # Generiere Solid-Color-PNG zur Laufzeit
         from PIL import Image
         color_hex = slide["solid_color"].lstrip("#")
         rgb = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4))
@@ -459,12 +456,20 @@ def get_slide_image(slide: dict, idx: int) -> Path:
             raise RuntimeError(f"local_bg Datei fehlt: {path}")
         return path
     if slide.get("google_query"):
-        return fetch_google_image(slide["google_query"], idx)
+        try:
+            return fetch_google_image(slide["google_query"], idx)
+        except Exception as e:
+            print(f"  [{idx}] Google failed ({e}), fallback Pexels")
     if slide.get("ai_render") or slide.get("ai_prompt"):
         prompt = slide.get("ai_prompt") or slide.get("pexels_query")
-        return fetch_ai_image(prompt, idx)
+        try:
+            return fetch_ai_image(prompt, idx)
+        except Exception as e:
+            print(f"  [{idx}] AI render failed ({str(e)[:120]}), fallback Pexels")
+    # Default + Fallback: Pexels
     return fetch_pexels_image(
-        slide["pexels_query"], idx, slide.get("pexels_color")
+        slide.get("pexels_query") or "abstract aesthetic",
+        idx, slide.get("pexels_color")
     )
 
 
