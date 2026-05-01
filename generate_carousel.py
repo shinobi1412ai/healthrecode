@@ -185,11 +185,11 @@ OUTRO_FINAL = {
         ("COMMENTS", "bold"),
         (" 👇", "primary"),
     ],
-    # BIG Follow CTA — groß + bold, mixed colors
+    # BIG Follow CTA — normal (nicht bold), 2-zeilig
     "big_follow_cta_parts": [
-        ("FOLLOW ", "bold"),
+        ("FOLLOW ", "normal"),
         ("@HEALTHRECODE", "primary"),
-        (" TO NOT MISS MORE!", "bold"),
+        ("<br>TO NOT MISS MORE!", "normal"),
     ],
     "subline": "",
     # Dunkler kosmischer Hintergrund via AI
@@ -501,6 +501,8 @@ def render_headline(parts):
             css = "color:white;font-weight:700"
         elif style == "regular":
             css = "color:rgba(255,255,255,0.92);font-weight:300"
+        elif style == "normal":
+            css = "color:white;font-weight:400"
         else:  # 'white' Default
             css = "color:white;font-weight:700"
         out.append(f'<span style="{css}">{text}</span>')
@@ -509,15 +511,15 @@ def render_headline(parts):
 
 def calc_headline_size(parts):
     """Auto-skalierte Schriftgröße je nach Textlänge.
-    Wenige Wörter = riesig. Viele Wörter = kleiner."""
+    Wenige Wörter = groß. Viele Wörter = kleiner. (15% kleiner als vorher.)"""
     total = sum(len(t) for t, _ in parts)
-    if total < 25:    return 46  # 1-3 Wörter
-    elif total < 40:  return 40  # kurz
-    elif total < 55:  return 35  # mittel-kurz
-    elif total < 75:  return 30  # mittel
-    elif total < 100: return 26  # lang
-    elif total < 130: return 23  # sehr lang
-    else:             return 20  # extra lang
+    if total < 25:    return 39  # 1-3 Wörter
+    elif total < 40:  return 34  # kurz
+    elif total < 55:  return 30  # mittel-kurz
+    elif total < 75:  return 26  # mittel
+    elif total < 100: return 22  # lang
+    elif total < 130: return 20  # sehr lang
+    else:             return 17  # extra lang
 
 
 def calc_subhead_size(parts):
@@ -734,10 +736,11 @@ def build_html(slides_with_images):
     background: linear-gradient(
       180deg,
       rgba(10,10,15,0.0) 0%,
-      rgba(10,10,15,0.0) 35%,
-      rgba(10,10,15,0.15) 50%,
-      rgba(10,10,15,0.65) 68%,
-      rgba(10,10,15,0.92) 82%,
+      rgba(10,10,15,0.0) 25%,
+      rgba(10,10,15,0.35) 40%,
+      rgba(10,10,15,0.75) 55%,
+      rgba(10,10,15,0.92) 70%,
+      rgba(10,10,15,0.98) 85%,
       rgba(10,10,15,1.0) 100%
     );
   }}
@@ -747,15 +750,18 @@ def build_html(slides_with_images):
   .bottom-stack {{
     position: absolute;
     bottom: 70px;
+    top: 55%;            /* erzwingt: Text-Stack maximal in unteren 45% des Slides */
     left: 0;
     right: 0;
     padding: 0 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    justify-content: flex-end;
+    gap: 6px;
     z-index: 5;
     text-align: center;
+    overflow: visible;
   }}
   .bottom-stack.top-position {{
     top: 40px;
@@ -843,8 +849,8 @@ def build_html(slides_with_images):
     line-height: 1.0;
     letter-spacing: 0.3px;
     color: white;
-    margin-bottom: 10px;
-    text-shadow: 0 2px 6px rgba(0,0,0,0.10);
+    margin-bottom: 2px;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40);
     /* font-size wird per inline style gesetzt (auto-scaled) */
   }}
   .subhead {{
@@ -854,8 +860,9 @@ def build_html(slides_with_images):
     line-height: 1.05;
     letter-spacing: 0.3px;
     color: rgba(255,255,255,0.92);
-    margin-bottom: 8px;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.10);
+    margin-bottom: 0;
+    margin-top: 2px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.35);
     /* font-size wird per inline style gesetzt */
   }}
 
@@ -974,16 +981,16 @@ def build_html(slides_with_images):
     text-transform: uppercase;
     margin-top: 2px;
   }}
-  /* BIG Follow-CTA für Outro-Slide */
+  /* BIG Follow-CTA für Outro-Slide — nicht bold, mehrzeilig */
   .big-follow-cta {{
     font-family: 'Oswald', sans-serif;
-    font-weight: 800;
+    font-weight: 400;
     font-size: 22px;
-    line-height: 1.15;
+    line-height: 1.2;
     letter-spacing: 0.4px;
     text-transform: uppercase;
     margin-top: 18px;
-    text-shadow: 0 2px 6px rgba(0,0,0,0.10);
+    text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40);
   }}
   /* Beschreibung — dritte Text-Ebene unter H2 */
   .description {{
@@ -994,7 +1001,7 @@ def build_html(slides_with_images):
     letter-spacing: 0.2px;
     text-transform: uppercase;
     margin-top: 14px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.30);
   }}
 
   /* Logo top-left — transparent (das neue Logo hat eigenen Hintergrund) */
