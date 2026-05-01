@@ -373,4 +373,81 @@ git add . && git commit -m "Update" && git push
 
 ---
 
+---
+
+## 16. Original Design-Foundation (Cindi Zhu Carousel Generator)
+
+Das Projekt basiert ursprünglich auf dem **"Instagram Carousel Generator"** Project-Prompt von **@cindiezhu** (Notion-URL hat User: das ist die Quelle des Stil-Frameworks). Die wichtigsten Prinzipien daraus, die in unserem `generate_carousel.py` implementiert sind:
+
+### 16.1 Slide-Format
+- **4:5 Aspect Ratio** (Instagram-Carousel-Standard)
+- HTML wird bei **420×525px** gerendert, mit `device_scale_factor=2.5714` zu **1080×1350px** skaliert (KEIN Viewport-Reflow)
+- Jede Slide ist self-contained — alle UI-Elemente in der Slide, keine Overlays
+
+### 16.2 Color-System (6-Token aus 1 Primary)
+Aus einer einzigen Brand-Color werden 6 abgeleitet:
+- `BRAND_PRIMARY` — User-Color (Akzent)
+- `BRAND_LIGHT` — primary +20% lightness
+- `BRAND_DARK` — primary -30% lightness
+- `LIGHT_BG` — getintetes Off-White
+- `LIGHT_BORDER` — ~1 Schritt dunkler als LIGHT_BG
+- `DARK_BG` — Near-black mit Brand-Tint
+
+### 16.3 Typography
+Cindis empfohlene Pairings:
+- Editorial: Playfair Display + DM Sans
+- Modern: Plus Jakarta Sans
+- Warm: Lora + Nunito Sans
+- Technical: Space Grotesk
+- Bold: Fraunces + Outfit
+- Health-Recode nutzt: **Oswald + Inter + JetBrains Mono** (Vital-Signs-Strip)
+
+### 16.4 Slide-Architektur (adaptiert)
+Cindis Original-Sequenz: Hero → Problem → Solution → Features → Details → How-To → CTA
+
+**Unsere Health-Recode-Adaption**:
+- Hero (3-6 Wörter Hook)
+- Content-Slides (3-15 stufenweise Erklärung)
+- Outro (Engagement + Profile-Card + Share-CTA)
+
+### 16.5 Export-Methode (kritisch!)
+Aus Cindi's Prompt direkt übernommen:
+- **HTML wird mit Python erzeugt** (NICHT Shell — `$` und Backticks zerstören Inhalte)
+- **Bilder als base64-data-URIs** im HTML eingebettet (nicht externe URLs während Generierung)
+- **Playwright `device_scale_factor=2.5714`** statt Viewport-Resize (Layout bleibt identisch zwischen Preview und Export)
+- **`wait_for_timeout(3000)` für Fonts** (sonst Fallback-Fonts)
+- **Vor Screenshot**: IG-Frame-Chrome ausblenden (`.ig-header,.ig-dots,.ig-actions,.ig-caption`)
+- **Carousel-Track per JS verschieben**: `track.style.transform = 'translateX(' + (-idx * 420) + 'px)'`
+
+### 16.6 Reusable Components (von Cindi inspiriert)
+- Tag/Category-Label (10px uppercase 2px-letter-spacing)
+- Logo-Lockup (40px circle BRAND_PRIMARY + Initial)
+- Strikethrough-Pills für "what's being replaced"
+- Numbered-Steps für Workflows
+- Color-Swatches für Customization-Slides
+- Watermark (optional, opacity 0.04-0.06)
+
+### 16.7 Cindi Zhus Design-Prinzipien (alle befolgt)
+1. ✅ Every slide is export-ready (UI baked in, nicht overlay)
+2. ✅ Light/dark alternation (in unserem Fall: dunkler Hintergrund mit Photo dominiert, Outro mit cosmic black)
+3. ✅ Heading + body font pairing
+4. ✅ Brand-derived palette
+5. ✅ Progress bar + arrow guide forward motion (in unserem Style: nur Pfeil, IG handled Dots automatisch)
+6. ✅ Last slide special (no arrow, full progress)
+7. ✅ Consistent components
+8. ✅ Content padding clears UI
+9. ✅ Iterate fast (slide-by-slide, not full rebuild)
+
+### 16.8 Was wir ÜBER Cindi Zhus Original hinaus gebaut haben:
+- **Vital-Signs-Strip** (HR/SpO₂/T° in JetBrains Mono) — unsere Signature
+- **Bold/Regular Mix** (mentality_facts inspiriert) — Connector-Wörter dünn, Keywords fett
+- **Multi-Source Image Pipeline** (Pexels → Pixabay → AI → Google Images) mit gracefuller Fallback
+- **Auto-Slide-Plan via Gemini** statt manueller Topic-Eingabe
+- **Auto-Topic-Refresh** wenn Queue leer
+- **Embedded Profile-Card** im Outro (statt nur Logo)
+- **Cron-Schedule + GitHub Actions** für 24/7 autonomen Betrieb
+- **Cloudinary + Instagram Graph API Integration** (Cindi's Prompt postet nicht selbst)
+
+---
+
 **Ende des Handover-Guides**. Bei Fragen: User direkt fragen, NICHT raten.
