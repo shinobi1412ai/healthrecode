@@ -102,25 +102,43 @@ def call_anthropic(topic: str, language: str = "en") -> dict:
     return _parse_json(text)
 
 
-def call_gemini(topic: str, language: str = "en") -> dict:
-    """Generiert Slide-Plan via Gemini Flash. Kostenlos im Free Tier."""
+def call_gemini(topic: str, language: str = "en", max_retries: int = 3) -> dict:
+    """Generiert Slide-Plan via Gemini Flash. Mit Retries bei 503/429."""
+    import time
     if not GEMINI_KEY:
         raise RuntimeError("GEMINI_API_KEY fehlt in .env")
 
     user_msg = f'Generate a 7-slide medical carousel plan for topic: "{topic}". Language: {language}.'
-    r = requests.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_KEY}",
-        json={
-            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-            "contents": [{"role": "user", "parts": [{"text": user_msg}]}],
-            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4000},
-        },
-        timeout=60,
-    )
-    if r.status_code != 200:
-        raise RuntimeError(f"Gemini API fail: {r.status_code} {r.text[:300]}")
-    text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
-    return _parse_json(text)
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            r = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_KEY}",
+                json={
+                    "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+                    "contents": [{"role": "user", "parts": [{"text": user_msg}]}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4000},
+                },
+                timeout=60,
+            )
+            if r.status_code == 200:
+                text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+                return _parse_json(text)
+            # Bei 503/429 (high demand / rate limit) → exponential backoff retry
+            if r.status_code in (503, 429, 500, 502):
+                wait = 5 * (2 ** attempt)  # 5s, 10s, 20s
+                print(f"  Gemini {r.status_code}, retry in {wait}s (Versuch {attempt+1}/{max_retries})", file=sys.stderr)
+                time.sleep(wait)
+                last_error = f"{r.status_code} {r.text[:200]}"
+                continue
+            raise RuntimeError(f"Gemini API fail: {r.status_code} {r.text[:300]}")
+        except requests.exceptions.RequestException as e:
+            last_error = str(e)
+            if attempt < max_retries - 1:
+                time.sleep(5 * (2 ** attempt))
+                continue
+            raise RuntimeError(f"Gemini Netzwerk-Fehler nach {max_retries} Versuchen: {e}")
+    raise RuntimeError(f"Gemini API fail nach {max_retries} Retries: {last_error}")
 
 
 def _parse_json(text: str) -> dict:
