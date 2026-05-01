@@ -791,10 +791,10 @@ def build_html(slides_with_images):
     display: block;
     object-fit: cover;
   }}
-  /* Share-CTA ganz unten — "Share this with your Friends →" */
+  /* Share-CTA — "Share this with your Friends →" — ein bisschen höher von Insta-Dots weg */
   .share-cta {{
     position: absolute;
-    bottom: 18px;
+    bottom: 32px;
     left: 0;
     right: 0;
     z-index: 5;
