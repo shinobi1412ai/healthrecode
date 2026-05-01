@@ -219,6 +219,35 @@ OUTRO_COMMENT = None  # nicht mehr benutzt
 
 
 # === PEXELS-FETCH ===
+def fetch_unsplash_image(query: str, idx: int) -> Path:
+    """Unsplash-Fallback. Free Tier: 50 Requests/h. High Quality."""
+    import hashlib
+    api_key = os.environ.get("UNSPLASH_ACCESS_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("UNSPLASH_ACCESS_KEY fehlt")
+    key = hashlib.md5(query.encode()).hexdigest()[:10]
+    cache = IMG_CACHE / f"slide_{idx}_unsplash_{key}.jpg"
+    if cache.exists() and cache.stat().st_size > 5000:
+        return cache
+    print(f"  [{idx}] Unsplash search: '{query}'")
+    r = requests.get(
+        "https://api.unsplash.com/search/photos",
+        headers={"Authorization": f"Client-ID {api_key}"},
+        params={"query": query, "per_page": 5, "orientation": "portrait"},
+        timeout=20,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Unsplash fail: {r.status_code} {r.text[:200]}")
+    results = r.json().get("results", [])
+    if not results:
+        raise RuntimeError(f"Unsplash: 0 Treffer für '{query}'")
+    url = results[0]["urls"].get("regular") or results[0]["urls"].get("full")
+    img_r = requests.get(url, timeout=60)
+    img_r.raise_for_status()
+    cache.write_bytes(img_r.content)
+    return cache
+
+
 def fetch_pixabay_image(query: str, idx: int) -> Path:
     """Pixabay-Fallback wenn Pexels nichts hat. Free Tier: 100 Calls/Min."""
     import hashlib
