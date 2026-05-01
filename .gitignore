@@ -1,0 +1,9 @@
+# Niemals einchecken — enthält API-Keys
+.env
+config.py
+*.key
+*.secret
+__pycache__/
+*.pyc
+output/
+slides/
