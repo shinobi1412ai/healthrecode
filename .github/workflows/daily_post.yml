@@ -13,9 +13,12 @@ on:
         type: boolean
         default: false
 
-  # Automatischer Cron-Trigger (täglich 18:00 UTC = 19/20 Uhr DE je nach Sommerzeit)
+  # 2x täglich automatisch:
+  #   09:00 UTC = 10/11 Uhr DE (Morgen-Post)
+  #   17:00 UTC = 18/19 Uhr DE (Abend-Post)
   schedule:
-    - cron: "0 18 * * *"
+    - cron: "0 9 * * *"
+    - cron: "0 17 * * *"
 
 jobs:
   post:

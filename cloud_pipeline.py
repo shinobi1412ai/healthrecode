@@ -62,10 +62,10 @@ def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
     if "generate_carousel" in sys.modules:
         del sys.modules["generate_carousel"]
     import generate_carousel as gc_mod
-    # SLIDES = AI-generierte Content-Slides + 2 IMMER angehängte Outros
+    # SLIDES = AI-generierte Content-Slides + Outros (OUTRO_COMMENT ist jetzt mit OUTRO_FOLLOW gemerged)
+    outros = [o for o in (gc_mod.OUTRO_FOLLOW, gc_mod.OUTRO_COMMENT) if o]
     gc_mod.SLIDES = (
-        [_normalize_slide(s) for s in plan["slides"]]
-        + [gc_mod.OUTRO_FOLLOW, gc_mod.OUTRO_COMMENT]
+        [_normalize_slide(s) for s in plan["slides"]] + outros
     )
 
     # Bilder + HTML + Export
