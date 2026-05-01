@@ -150,12 +150,14 @@ def upload_to_cloudinary(timestamp: str) -> list[str]:
         secure=True,
     )
     output = ROOT / "output"
+    # Alle slide_N.png im output Ordner finden, sortiert nach Nummer
+    slide_files = sorted(
+        output.glob("slide_*.png"),
+        key=lambda p: int(p.stem.split("_")[1]),
+    )
     urls = []
-    for i in range(1, 8):
-        f = output / f"slide_{i}.png"
-        if not f.exists():
-            print(f"  WARNUNG: {f.name} fehlt")
-            continue
+    for f in slide_files:
+        i = int(f.stem.split("_")[1])
         result = cloudinary.uploader.upload(
             str(f),
             public_id=f"medical_{timestamp}_slide_{i}",
@@ -163,58 +165,82 @@ def upload_to_cloudinary(timestamp: str) -> list[str]:
             overwrite=True,
         )
         urls.append(result["secure_url"])
-        print(f"  Uploaded slide_{i}.png")
+        print(f"  Uploaded {f.name}")
     return urls
 
 
 def post_to_instagram(image_urls: list[str], caption: str) -> str:
-    """Postet Carousel via Instagram Graph API. Erfordert Meta-Setup.
+    """Postet Carousel via NEUE Instagram Login API (graph.instagram.com).
+    Nutzt IG_USER_ID + IG_USER_ACCESS_TOKEN (nicht die alten Meta Graph Vars).
 
-    Returns: 'posted', 'no_meta_setup', oder 'error: ...'
+    Returns: 'posted: <id>', 'no_meta_setup', oder 'error: ...'
     """
-    ig_id = os.environ.get("IG_BUSINESS_ACCOUNT_ID")
-    token = os.environ.get("META_LONG_LIVED_TOKEN")
+    import time
+    ig_id = os.environ.get("IG_USER_ID", "").strip()
+    token = os.environ.get("IG_USER_ACCESS_TOKEN", "").strip()
     if not ig_id or not token:
-        return "no_meta_setup"
+        return "no_meta_setup (IG_USER_ID oder IG_USER_ACCESS_TOKEN fehlt)"
 
+    BASE = "https://graph.instagram.com/v22.0"
     try:
-        # Step 1: Container pro Bild erstellen
+        # Step 1: Pro Bild einen Carousel-Item-Container erstellen
         container_ids = []
-        for url in image_urls:
+        for i, url in enumerate(image_urls):
             r = requests.post(
-                f"https://graph.facebook.com/v21.0/{ig_id}/media",
+                f"{BASE}/{ig_id}/media",
                 params={
                     "image_url": url,
                     "is_carousel_item": "true",
                     "access_token": token,
                 },
-                timeout=30,
+                timeout=60,
             )
-            r.raise_for_status()
+            if r.status_code != 200:
+                return f"error: container {i+1} failed: {r.status_code} {r.text[:300]}"
             container_ids.append(r.json()["id"])
+            print(f"    Container {i+1}/{len(image_urls)} created: {container_ids[-1]}")
 
         # Step 2: Carousel-Container
         r = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_id}/media",
+            f"{BASE}/{ig_id}/media",
             params={
                 "media_type": "CAROUSEL",
                 "children": ",".join(container_ids),
                 "caption": caption,
                 "access_token": token,
             },
-            timeout=30,
+            timeout=60,
         )
-        r.raise_for_status()
+        if r.status_code != 200:
+            return f"error: carousel container failed: {r.status_code} {r.text[:300]}"
         carousel_id = r.json()["id"]
+        print(f"    Carousel container: {carousel_id}")
 
-        # Step 3: Publish
+        # Step 3: Warten bis Container ready (IG braucht ~5-30s)
+        for attempt in range(30):
+            time.sleep(2)
+            sr = requests.get(
+                f"{BASE}/{carousel_id}",
+                params={"fields": "status_code", "access_token": token},
+                timeout=20,
+            )
+            if sr.status_code == 200:
+                status = sr.json().get("status_code")
+                if status == "FINISHED":
+                    break
+                if status == "ERROR":
+                    return f"error: container processing failed"
+
+        # Step 4: Publish
         r = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_id}/media_publish",
+            f"{BASE}/{ig_id}/media_publish",
             params={"creation_id": carousel_id, "access_token": token},
-            timeout=30,
+            timeout=60,
         )
-        r.raise_for_status()
-        return f"posted: {r.json().get('id')}"
+        if r.status_code != 200:
+            return f"error: publish failed: {r.status_code} {r.text[:300]}"
+        post_id = r.json().get("id")
+        return f"posted: {post_id}"
     except Exception as e:
         return f"error: {e}"
 
