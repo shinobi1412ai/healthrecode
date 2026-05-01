@@ -68,12 +68,13 @@ def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
         [_normalize_slide(s) for s in plan["slides"]] + outros
     )
 
-    # Bilder + HTML + Export
+    # Bilder + HTML + Export — defensiv: None-Slides filtern, korrekte Bild-Quelle wählen
     slides_with_imgs = []
-    for i, slide in enumerate(gc_mod.SLIDES):
-        path = gc_mod.fetch_pexels_image(
-            slide["pexels_query"], i + 1, slide.get("pexels_color")
-        )
+    valid_slides = [s for s in gc_mod.SLIDES if s and isinstance(s, dict)]
+    print(f"    Verarbeite {len(valid_slides)} Slides (nach None-Filter)")
+    for i, slide in enumerate(valid_slides):
+        # get_slide_image wählt Quelle: local_bg / google / ai_render / pexels
+        path = gc_mod.get_slide_image(slide, i + 1)
         b64 = gc_mod.img_to_base64(path)
         slides_with_imgs.append((slide, b64))
 

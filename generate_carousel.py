@@ -219,9 +219,39 @@ OUTRO_COMMENT = None  # nicht mehr benutzt
 
 
 # === PEXELS-FETCH ===
+def fetch_pixabay_image(query: str, idx: int) -> Path:
+    """Pixabay-Fallback wenn Pexels nichts hat. Free Tier: 100 Calls/Min."""
+    import hashlib
+    api_key = os.environ.get("PIXABAY_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("PIXABAY_API_KEY fehlt — als Fallback empfohlen")
+    key = hashlib.md5(query.encode()).hexdigest()[:10]
+    cache = IMG_CACHE / f"slide_{idx}_pixabay_{key}.jpg"
+    if cache.exists() and cache.stat().st_size > 5000:
+        return cache
+    print(f"  [{idx}] Pixabay search: '{query}'")
+    r = requests.get(
+        "https://pixabay.com/api/",
+        params={
+            "key": api_key, "q": query, "image_type": "photo",
+            "orientation": "vertical", "per_page": 5, "safesearch": "true",
+        }, timeout=20,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Pixabay fail: {r.status_code}")
+    hits = r.json().get("hits", [])
+    if not hits:
+        raise RuntimeError(f"Pixabay: 0 Treffer für '{query}'")
+    url = hits[0].get("largeImageURL") or hits[0].get("webformatURL")
+    img_r = requests.get(url, timeout=60)
+    img_r.raise_for_status()
+    cache.write_bytes(img_r.content)
+    return cache
+
+
 def fetch_pexels_image(query: str, idx: int, color: str = None) -> Path:
     """Sucht das beste Pexels-Foto für die Query und cached es lokal.
-    Cache-Key enthält die Query damit alte Bilder nicht wiederverwendet werden."""
+    Bei 0 Treffern → Fallback auf Pixabay → Fallback auf vereinfachte Query."""
     import hashlib
     key = hashlib.md5(f"{query}|{color or ''}".encode()).hexdigest()[:10]
     cache = IMG_CACHE / f"slide_{idx}_{key}.jpg"
@@ -243,15 +273,33 @@ def fetch_pexels_image(query: str, idx: int, color: str = None) -> Path:
         raise RuntimeError(f"Pexels search fail: {r.status_code} {r.text[:200]}")
     photos = r.json().get("photos", [])
     if not photos:
-        # Fallback ohne color
+        # Stufe 1: Fallback ohne color
         params.pop("color", None)
         r = requests.get(
             "https://api.pexels.com/v1/search",
             headers={"Authorization": PEXELS_KEY},
-            params=params,
-            timeout=20,
+            params=params, timeout=20,
         )
         photos = r.json().get("photos", [])
+    if not photos:
+        # Stufe 2: Vereinfachte Query (erste 2 Wörter)
+        simple = " ".join(query.split()[:2])
+        if simple != query:
+            print(f"  [{idx}] Pexels: 0 Treffer → vereinfachte Query '{simple}'")
+            r = requests.get(
+                "https://api.pexels.com/v1/search",
+                headers={"Authorization": PEXELS_KEY},
+                params={"query": simple, "per_page": 5}, timeout=20,
+            )
+            photos = r.json().get("photos", [])
+    if not photos:
+        # Stufe 3: Pixabay-Fallback
+        if os.environ.get("PIXABAY_API_KEY"):
+            print(f"  [{idx}] Pexels: 0 Treffer → Pixabay-Fallback")
+            try:
+                return fetch_pixabay_image(query, idx)
+            except Exception as e:
+                print(f"  Pixabay auch fehlgeschlagen: {e}")
     if not photos:
         raise RuntimeError(f"Keine Pexels-Treffer für '{query}'")
 
