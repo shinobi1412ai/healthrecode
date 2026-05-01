@@ -1,19 +1,121 @@
-# Topics-Queue für Health Recode (FIFO — erstes wird genommen)
-# Lines mit # werden ignoriert. Leere Zeilen auch.
-# Pro Tag wird die erste echte Zeile genommen, gepostet, dann auskommentiert.
+# Topics-Queue für Health Recode (FIFO — erstes wird genommen, dann auskommentiert)
+# Auto-Refill aktiv: wenn nur noch 10 Topics übrig sind, generiert Gemini ~50 neue.
 
+# === Fasting & Metabolism ===
 72-hour fasting timeline — what science says hour by hour
+What happens in your body when you skip breakfast (real science)
+Intermittent fasting 16:8 — what 5 studies actually proved
+Why ketones make your brain sharper than glucose
+Autophagy: how your cells clean themselves (Nobel Prize 2016)
+The 90-minute rule: when your body burns fat fastest
+72-hour fast doubles HGH levels — what the data shows
+Why fasting after 40 is different from fasting at 20
+The metabolic switch — when your body changes fuel
+
+# === Vitamins & Minerals ===
 Vitamin D deficiency: 7 symptoms doctors often miss
-Magnesium and sleep — what 5 studies show
-Mikrochimerism: why your mother's cells stay in you forever
+Why 80% of people are magnesium deficient and don't know it
+Omega-3 vs Omega-6: the inflammation ratio nobody talks about
+Vitamin B12 deficiency causes 5 brain symptoms
+Iron deficiency in women: signs beyond fatigue
+Zinc and testosterone: what 8 studies show
+Vitamin K2 — the missing nutrient for heart and bones
+Magnesium types ranked: which actually works for sleep
+Calcium without K2 is dangerous — here's why
+Selenium and thyroid: the hidden connection
+
+# === Heart & Cardiovascular ===
 What happens during a heart attack — minute by minute
-Saffron vs Fluoxetine: clinical trial 120 women PMDD
-Omega-3 supplementation 8 weeks improved menstrual regularity PCOS
-72 hours fast triggers Nobel-Prize autophagy process
-HIIT exercises that kill circulating cancer cells (study)
-Why thicker thighs predict longer life (blood sugar mechanism)
-Stem cell regeneration during 72-hour fast
+Why women's heart attack symptoms are different
+Resting heart rate over 70 — why that's a warning sign
+HRV: the most underrated biomarker for longevity
+Coronary artery anatomy explained in 60 seconds
+The widowmaker artery — why it kills so fast
+How blood pressure damages organs silently
+Cold exposure and your cardiovascular system
+The dive reflex: how cold water resets your heart rhythm
+Why arrhythmias often happen at night
+
+# === Brain & Mental Health ===
+Why your brain shrinks during pregnancy (and recovers)
+ADHD brain vs neurotypical — the dopamine difference
+The vagus nerve: how breathing controls your nervous system
+Why 97% of people can't focus more than 8 seconds
+Anxiety lives in your gut — not your head
+Sleep stages explained: REM, deep, and why both matter
+The cortisol-melatonin clock and how to fix it
+Brain fog causes nobody talks about
+Microbiome and depression — the gut-brain axis explained
+EMDR and trauma — what the brain actually does
+
+# === Hormones ===
 Cortisol cascade: how stress destroys your hormones
-Lemon peel tea benefits — what's actually in it
-Bone density after 50: how strength training rebuilds it
-Microbiome and mental health: gut-brain axis explained
+Testosterone in men: 5 things that crash it
+Insulin resistance — the silent path to diabetes
+Estrogen dominance: signs and how to balance
+Thyroid and metabolism — why TSH alone isn't enough
+HGH: when it spikes, what triggers it, why it matters
+Leptin resistance — why diets fail
+Why women's hormones change every 7 days
+Adrenal fatigue is fake — but cortisol dysregulation is real
+Melatonin: not just for sleep, but cellular repair
+
+# === Women's Health ===
+A clinical trial with 120 women: saffron vs Fluoxetine for PMDD
+Omega-3 supplementation improves PCOS menstrual regularity (study)
+Why women crave salt before periods (electrolyte science)
+Endometriosis affects 1 in 10 women — most go undiagnosed
+Breast cancer genes: how lifestyle changes turn them off
+The hormonal cascade of PMS in 4 stages
+Why birth control changes your microbiome
+Pregnancy reduces brain volume — and rebuilds it stronger
+Postpartum hormone crash: what really happens
+Menopause: the 7 stages most doctors don't explain
+
+# === Sleep ===
+What happens to your brain after 24 hours without sleep
+Why sleeping less than 6 hours raises cancer risk
+The 3 sleep cycles you need each night
+How blue light delays melatonin by 90 minutes
+Sleep apnea damages every organ in your body
+Why old people wake up at 4 AM
+Magnesium glycinate vs L-theanine: which actually helps
+Why napping after 3 PM ruins your sleep
+The sleep-immune system connection
+Dreams and memory consolidation explained
+
+# === Surprising Facts ===
+People with thicker thighs live longer — the blood sugar mechanism
+Microchimerism: why your mother's cells stay in you forever
+Ear hair growth in old age signals heart disease
+Why tall people get more cancer
+Your mouth bacteria predict heart disease risk
+The mother-baby cell exchange that lasts forever
+Why we get goosebumps when cold (and during music)
+Belly button bacteria are unique to you
+Lemon peel tea: what's actually in it
+Saffron and depression — Nobel Prize-level potential
+
+# === Cancer & Disease ===
+HIIT exercises that kill circulating cancer cells (study)
+72-hour fast triggers Nobel-Prize autophagy process against cancer
+Photodynamic therapy: how light destroys cancer cells
+Why your body kills cancer cells every day (and when it fails)
+Cancer immunotherapy: how T-cells learn to fight tumors
+Inflammation and disease — the silent killer cascade
+Diabetes Type 2 is reversible — what the science shows
+Why obesity causes 13 different cancers
+The cancer-stress connection through cortisol
+HPV vaccine: what it actually does (and doesn't)
+
+# === Recovery & Performance ===
+Cold plunges activate brown fat — what the research says
+Strength training rebuilds aging bones (after 60)
+Stem cell regeneration during 72-hour fasts
+Why HIIT burns fat hours after the workout
+Z-lines: how DNA tail length predicts your biological age
+Mitochondria: more matters than size
+The 90/10 rule for muscle recovery
+Why your fastest morning runs aren't your best workouts
+Cold exposure and dopamine — the lasting boost
+Sauna 4× per week reduces all-cause mortality (study)
