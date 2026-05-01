@@ -118,16 +118,22 @@ def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
 
 
 def _normalize_slide(s: dict) -> dict:
-    """Stellt sicher, dass JSON-Plan zu generate_carousel.SLIDES Format passt."""
+    """Stellt sicher, dass JSON-Plan zu generate_carousel.SLIDES Format passt.
+    Defensiv: alle Felder optional, Pass-Through für google_query/ai_render."""
+    if not s or not isinstance(s, dict):
+        return None
     return {
         "type": s.get("type", "content"),
         "tag": s.get("tag", ""),
-        "headline_parts": [tuple(p) for p in s["headline_parts"]],
+        "headline_parts": [tuple(p) for p in s.get("headline_parts", [])],
         "subhead_parts": [tuple(p) for p in s["subhead_parts"]] if s.get("subhead_parts") else None,
         "subline": s.get("subline", ""),
-        "pexels_query": s["pexels_query"],
+        "pexels_query": s.get("pexels_query", "minimalist health aesthetic"),
         "pexels_color": s.get("pexels_color"),
-        "show_logo_block": True,
+        "ai_render": s.get("ai_render", False),
+        "ai_prompt": s.get("ai_prompt"),
+        "google_query": s.get("google_query"),
+        "show_logo_block": s.get("show_logo_block", True),
         "show_swipe_cta": s.get("show_swipe_cta", True),
         "engagement_text": s.get("engagement_text", ""),
     }
