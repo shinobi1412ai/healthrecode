@@ -1,0 +1,104 @@
+name: Daily Health Recode Post
+
+on:
+  # Manuell triggerbar via GitHub UI (zum Testen)
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Topic (überschreibt topics.txt). Leer = nimmt erstes aus topics.txt"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry-Run (nur generieren, NICHT posten)"
+        type: boolean
+        default: false
+
+  # Automatischer Cron-Trigger (täglich 18:00 UTC = 19/20 Uhr DE je nach Sommerzeit)
+  schedule:
+    - cron: "0 18 * * *"
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-v1
+
+      - name: Install Playwright browser
+        run: python -m playwright install --with-deps chromium
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
+          TOGETHER_API_KEY=${{ secrets.TOGETHER_API_KEY }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CSE_ID=${{ secrets.GOOGLE_CSE_ID }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          IG_USER_ACCESS_TOKEN=${{ secrets.IG_USER_ACCESS_TOKEN }}
+          IG_USER_ID=${{ secrets.IG_USER_ID }}
+          IG_APP_ID=${{ secrets.IG_APP_ID }}
+          IG_APP_SECRET=${{ secrets.IG_APP_SECRET }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Run pipeline
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          TOPIC_OVERRIDE: ${{ github.event.inputs.topic }}
+        run: |
+          if [ -n "$TOPIC_OVERRIDE" ]; then
+            TOPIC="$TOPIC_OVERRIDE"
+            python cloud_pipeline.py "$TOPIC" $([ "$DRY_RUN" != "true" ] && echo "--upload --post")
+          else
+            python cloud_pipeline.py --from-queue topics.txt $([ "$DRY_RUN" != "true" ] && echo "--upload --post")
+          fi
+
+      - name: Commit updated queue + summary
+        if: success()
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add topics.txt output/summary_*.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Auto-post $(date -u +%Y-%m-%d)"
+          git push || true
+
+      - name: Upload artifacts (slides + summary)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: carousel-output
+          path: |
+            output/*.png
+            output/*.html
+            output/summary_*.json
+          retention-days: 14

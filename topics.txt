@@ -1,0 +1,19 @@
+# Topics-Queue für Health Recode (FIFO — erstes wird genommen)
+# Lines mit # werden ignoriert. Leere Zeilen auch.
+# Pro Tag wird die erste echte Zeile genommen, gepostet, dann auskommentiert.
+
+72-hour fasting timeline — what science says hour by hour
+Vitamin D deficiency: 7 symptoms doctors often miss
+Magnesium and sleep — what 5 studies show
+Mikrochimerism: why your mother's cells stay in you forever
+What happens during a heart attack — minute by minute
+Saffron vs Fluoxetine: clinical trial 120 women PMDD
+Omega-3 supplementation 8 weeks improved menstrual regularity PCOS
+72 hours fast triggers Nobel-Prize autophagy process
+HIIT exercises that kill circulating cancer cells (study)
+Why thicker thighs predict longer life (blood sugar mechanism)
+Stem cell regeneration during 72-hour fast
+Cortisol cascade: how stress destroys your hormones
+Lemon peel tea benefits — what's actually in it
+Bone density after 50: how strength training rebuilds it
+Microbiome and mental health: gut-brain axis explained
