@@ -1,0 +1,48 @@
+name: Auto-Refresh IG Token (Forever)
+
+# Refresht den IG_USER_ACCESS_TOKEN automatisch alle 50 Tage.
+# IG-Tokens laufen nach 60 Tagen ab — durch regelmäßiges Refresh
+# bleibt der Token UNBEGRENZT gültig (kein manueller Eingriff nötig).
+#
+# Schreibt den neuen Token via gh CLI direkt in den Repo-Secret zurück.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Alle 50 Tage = ca. 7x pro Jahr (10 Tage Sicherheits-Buffer vor 60-Tage-Expire)
+    # Cron läuft am 1./21./11. der Monate Jan/Mar/May/Jul/Sep/Nov um 03:00 UTC
+    - cron: "0 3 1 1,3,5,7,9,11 *"
+    - cron: "0 3 21 2,4,6,8,10,12 *"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests python-dotenv
+
+      - name: Refresh IG token + write to repo secret
+        env:
+          IG_USER_ACCESS_TOKEN: ${{ secrets.IG_USER_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT_FOR_SECRETS }}  # PAT mit "secrets: write" scope
+        run: |
+          NEW_TOKEN=$(python refresh_ig_token.py --quiet)
+          if [ -z "$NEW_TOKEN" ]; then
+            echo "FEHLER: Kein neuer Token erhalten."
+            exit 1
+          fi
+          echo "Neuer Token erhalten (${#NEW_TOKEN} chars). Update Secret..."
+          # Updates Repo-Secret IG_USER_ACCESS_TOKEN via gh CLI
+          echo "$NEW_TOKEN" | gh secret set IG_USER_ACCESS_TOKEN --body -
+          echo "OK — Repo-Secret aktualisiert."

@@ -73,6 +73,110 @@ Example:
 4. Does H2 EXPAND the curiosity rather than rephrase H1?
 If any answer is NO → rewrite the hook.
 
+## HERO IMAGE VARIETY — ANTI-SAMENESS RULE
+CRITICAL: NEVER fall back to "man face close-up" or "person staring at camera" as the hero default. This is the #1 sameness trap that makes carousels feel identical.
+
+### MANDATORY ROTATION across hero subjects:
+For each new carousel, pick a DIFFERENT hero category than the last 3 posts. Cycle through:
+
+1. **Anatomical AI Render** — close-up of the organ/system the topic is about (heart, brain, gut, liver, cell)
+2. **Action Shot** — person DOING something specific (running at sunrise, sleeping, drinking water, holding stomach in pain)
+3. **Object Hero** — the topic's key item alone (pill bottle, blood-test tube, glass of water, kettlebell, plate of food)
+4. **Environment Shot** — wide framing of a relevant space (dim bedroom, lab, kitchen, gym, hospital corridor)
+5. **Body Part Detail** — extreme close-up of a non-face body part (hand, foot, eye macro, skin texture, muscle)
+6. **Silhouette / Backlit** — person in shadow against bright window/sunset/lamp (gender-ambiguous, mood-driven)
+7. **Macro / Microscopic** — cellular/molecular zoom (cells, microbiome, neurons, hormones)
+8. **Split-Frame Concept** — before/after, two contrasting states (sick vs healthy, sleep vs awake)
+
+### EXPLICITLY FORBIDDEN as hero (unless topic literally requires a face):
+- Generic "man's face close to camera"
+- Stock "concerned woman with hand on forehead"
+- Smiling person looking at sunset
+- Suit person at desk
+- Yoga pose at sunset (overused)
+- Anyone holding a generic vegetable while smiling
+
+### Topic → Best hero category:
+- Hormone/Mechanism topics → Anatomical AI Render or Macro/Microscopic
+- Routine/Habit topics → Action Shot or Environment Shot
+- Symptom/Warning topics → Body Part Detail or Silhouette
+- Result/Transformation topics → Split-Frame Concept
+- Food/Nutrient topics → Object Hero (the food alone, no person)
+
+### When you MUST use a face shot:
+ONLY when the topic is explicitly about facial expression, mental state visible on face (panic, exhaustion shown via posture/eyes), or specific facial anatomy. Even then: use SIDE PROFILE or 3/4 angle, not direct close-up.
+
+### Variety enforcement per carousel:
+Within ONE carousel, NEVER use the same subject category twice. If hero is Anatomical Render, content slides must be Action/Object/Environment/Macro — not more renders.
+
+## ADAPTIVE THEME LOGIC — CRITICAL
+This brand is medical/health/anatomy-focused. EVERY image must match the brand's vertical.
+NEVER use generic business/lifestyle photos for a medical post.
+
+### Theme → Subject Mapping (medical/health context):
+For Health Recode (medical/health/anatomy/wellness), match topic to concrete subject:
+| Topic theme | Subject choice |
+|---|---|
+| Fasting / metabolism | Person silhouette at sunrise, AI render of cells, glass of water |
+| Vitamin / mineral deficiency | Specific food source, concerned face, blood-test scene |
+| Sleep / circadian | Person sleeping, dark bedroom, brain wave AI render |
+| Hormones (cortisol, testosterone, insulin) | AI render of gland (adrenal/thyroid/pancreas), person reacting |
+| Heart / cardiovascular | AI render of heart muscle, person clutching chest, BP cuff |
+| Brain / mental health | AI render of brain regions, person looking pensive, neural pathways |
+| Gut / digestion | AI render of gut microbiome, food photo, person holding stomach |
+| Cancer / cell biology | AI render of cell mitosis/apoptosis, lab scene, microscope view |
+| Workout / muscle recovery | Athlete in dim gym, AI render of muscle fibers, ice bath |
+| Women's health / hormones | Female silhouette, AI render of ovaries/uterus, period-tracking abstract |
+
+### Adapt on the fly when topic isn't in the table:
+- Read the topic carefully → identify the BODY SYSTEM or PROCESS involved
+- Pick the most CONCRETE visual that DIRECTLY shows what the slide says
+- For "ADHD focus tricks" → person with focused eyes / single light source / chaos-to-clarity transition
+- For "Fasting psychology" → person hand resisting food / calm meditation in kitchen
+- For "Inflammation markers" → AI render of inflamed cell / person with red joint
+- NEVER fall back to generic "person sunset meditation" when topic has a specific visual
+
+### Gender / demographic rotation:
+- Rotate gender across the carousel (~50/50 male/female across slides)
+- For unisex topics use gender-neutral framing (silhouettes, body parts only, abstract)
+- For female-specific topics (period, menopause, pregnancy) use female subjects
+- For male-specific topics (testosterone, prostate) use male subjects
+
+### WOMAN VARIETY — match her activity to the topic:
+NEVER default to "businesswoman in suit" or "concerned woman with hand on cheek close-up". Pick activity by topic:
+
+| Topic theme | Woman context |
+|---|---|
+| Fitness / workout / muscle | Woman lifting weights, yoga pose mid-flow, running outdoor, boxing in dim gym |
+| Nutrition / hydration / fasting | Woman drinking water at sunrise, holding fruit at kitchen counter, prepping a meal |
+| Sleep / circadian | Woman sleeping in dim bedroom, waking up at sunrise, eyes closed peacefully |
+| Hormones / period / fertility | Woman holding stomach gently, abstract female silhouette, period-tracker hand-held |
+| Stress / mental health | Woman in nature looking thoughtful (NOT direct face), silhouette at window, hands on lap |
+| Skin / beauty (only if topic) | Woman side-profile skincare, hand applying serum, NOT direct face stare |
+| Pregnancy / motherhood | Woman holding belly, mother + baby, abstract pregnancy silhouette |
+| Mindset / focus | Woman reading book, journaling, hiking with backpack |
+| Recovery / yoga / mobility | Woman in warrior pose, foam-rolling, stretching at home |
+| Business/career (RARELY for medical brand) | ONLY if topic is explicitly stress-from-work — then suit OK |
+
+### EXPLICITLY FORBIDDEN as default woman-image:
+- Generic "businesswoman in blazer at desk"
+- "Woman with hand on forehead concerned" (unless headache topic specifically)
+- Direct close-up face stare into camera (unless facial-anatomy topic)
+- Stock "smiling woman with green smoothie thumbs up"
+
+### Rule when in doubt:
+If topic is medical/health/fitness → woman should be DOING something physical or contextual. Activity > business pose.
+
+### Brand-vertical override:
+This is a MEDICAL brand. If you are unsure → default to AI-rendered anatomy/cells.
+Do NOT use:
+- Suit-and-tie business photos
+- Hustle-culture / motivation imagery (gold chains, clocks, money, success)
+- Generic stock "thumbs up" / "high five" lifestyle shots
+- Office / laptop / computer setups (unless topic is screen-time related)
+
+If a future user adapts this prompt for a DIFFERENT vertical (fitness, finance, mindset), the entire mapping table above MUST be rewritten — never reuse medical mapping for a fitness brand.
+
 ## VISUAL MATCHING — CRITICAL
 Every image must DIRECTLY visualize what the slide says. NEVER use generic/abstract photos.
 
@@ -113,6 +217,37 @@ NEVER use random "person meditating" or "person sunset" for hero. Hero must HOOK
 ### Final/CTA slide visual rule:
 Strong takeaway visual. AI render of the topic's RESULT (e.g., regenerated cells, healthy organ) OR strong action photo.
 
+## LIST/TIPS SLIDE (NEW — use this for actionable content)
+For carousels about TIPS, STEPS, SIGNS, RECOMMENDATIONS, DO'S/DON'TS, RULES, HABITS, MISTAKES:
+USE A "list" TYPE SLIDE — pure text, no image, numbered items.
+
+When to insert a list slide:
+- Topic is "5 signs of...", "7 habits that...", "Top tips for...", "Steps to...", "Mistakes that..."
+- The user benefits more from a scannable checklist than from a flowing explanation
+- You want to give actionable takeaways at the END of the carousel (replace the last content slide with a list slide)
+- Long carousels benefit from 1-2 list slides as "summary" / "action plan" between explainer slides
+
+list slide format (NO image fields needed — auto-uses dark solid):
+{
+  "type": "list",
+  "tag": "ACTION PLAN",
+  "headline_parts": [["MASTER YOUR ", "white"], ["FIRST HOUR", "primary"]],
+  "list_items": [
+    {"number": "01", "title": "THE SILENT AWAKENING", "description": "Resist screens for the first 30 minutes. Let your mind clear, not react."},
+    {"number": "02", "title": "HYDRATE & MOVE", "description": "Drink water immediately. Perform 10-15 minutes of light movement or stretching."},
+    {"number": "03", "title": "PLAN YOUR ATTACK", "description": "Review your top 3 priorities for the day. Visualize their execution."},
+    {"number": "04", "title": "IMMERSION ZONE", "description": "Tackle your most important task for 60-90 minutes, distraction-free."}
+  ]
+}
+
+list slide rules:
+- 3 to 6 items per list slide (4 is the sweet spot)
+- number: "01", "02", "03"... (always 2-digit, zero-padded)
+- title: 2-4 words, ALL CAPS, action-oriented (NOT generic like "BE HEALTHY")
+- description: 1-2 sentences, 8-20 words, concrete + specific
+- headline_parts: short topic title (3-7 words)
+- DO NOT add pexels_query, ai_render, ai_prompt, or google_query for list slides — they auto-render dark solid BG.
+
 ## TEXT STRUCTURE
 - Slide 1 (Hero): MUST follow HOOK MANDATE above. H1 (4-8 words, must contain a number OR specific term OR shocking claim) + H2 (8-15 words, expands with mechanism/stakes — NOT a rephrase of H1)
 - Slides 2 to N-1: H1 (4-10 words) + H2 (10-20 words explaining mechanism). Each slide must DELIVER on the hook's promise — no filler.
@@ -134,12 +269,27 @@ Mix bold/regular per line to create visual rhythm. Example:
 ## TOPIC CONSTRAINT
 Strictly medical/health/anatomy/wellness. No generic lifestyle. Every claim must be science-backed (cite study counts, hormone names, specific numbers).
 
+## CAPTION CTA RULE — MANDATORY at end of every caption
+Every caption MUST end with a clear, friendly engagement CTA (~2-3 sentences) before the hashtags.
+The CTA must include all 4 of:
+1. Save reminder ("Save this so you don't lose it" / "Save for later")
+2. Share prompt ("Share with someone who needs this" / "Send to a friend who's struggling with X")
+3. Follow nudge ("Follow @healthrecode for daily science" / "Follow for more")
+4. Don't-forget closer ("Don't forget!" / "Pinky promise it'll change your week")
+
+EXAMPLE CTA blocks (rotate variations to avoid repetition):
+- "💾 Save this so you don't lose it. Tag a friend who needs to see this. Follow @healthrecode for daily science-backed health. Don't forget — your future body will thank you."
+- "Save it. Share with someone who's been asking about this. Follow @healthrecode for more like this — daily. Don't sleep on this 🔥"
+- "If this hit, save it for later, send to a friend, and follow @healthrecode for daily medical breakdowns. Don't miss the next one!"
+
+Tone: warm, friendly, NOT salesy. Speak like a knowledgeable friend.
+
 Return ONLY valid JSON, no markdown fences, no commentary.
 
 {
   "topic": "<input topic>",
   "language": "<en or de>",
-  "caption": "<200-word IG caption with 3-5 educational facts + 5 emoji + 8 hashtags>",
+  "caption": "<200-word IG caption: 1) hook line, 2) 3-5 educational facts (science-backed), 3) MANDATORY engagement CTA at end (see CAPTION CTA RULE below), 4) 5 emoji throughout, 5) 8 hashtags last>",
   "slide_count": "<integer between 3 and 15 — chosen by you based on topic depth>",
   "slides": [
     {

@@ -1863,9 +1863,1248 @@ SYSTEM_PROMPT = """...existing...
 
 ---
 
+## 33. 📋 LIST/TIPS SLIDE TYPE (Action-Plan-Slide ohne Bild)
+
+Eine zusätzliche Slide-Variante für **actionable Inhalte** — keine Bilder, nur nummerierte Tipps mit dunklem Solid-Hintergrund.
+
+### 33.1 Wann eine list-Slide einsetzen?
+
+Bei strukturierten Aktionen — Tipps, Signale, Schritte, Don'ts, Habits.
+**Trigger-Patterns:** "5 Anzeichen für ...", "7 Tipps gegen ...", "Schritte zur Behandlung ...", "Mistakes that ruin..."
+
+**Wo platzieren?** Letzte Content-Slide (Action-Plan), oder als Mid-Carousel-Summary in 10+ Slide Carousels.
+
+### 33.2 list-Slide JSON-Schema
+
+```json
+{
+  "type": "list",
+  "tag": "ACTION PLAN",
+  "headline_parts": [["MASTER YOUR ", "white"], ["FIRST HOUR", "primary"]],
+  "list_items": [
+    {"number": "01", "title": "THE SILENT AWAKENING", "description": "Resist screens for the first 30 minutes."},
+    {"number": "02", "title": "HYDRATE & MOVE", "description": "Drink water immediately. 10-15 min light movement."},
+    {"number": "03", "title": "PLAN YOUR ATTACK", "description": "Review your top 3 priorities for the day."},
+    {"number": "04", "title": "IMMERSION ZONE", "description": "Tackle most important task 60-90 min, distraction-free."}
+  ]
+}
+```
+
+KEIN `pexels_query`/`ai_render`/`google_query` nötig — Renderer setzt automatisch dunkles Solid (`BRAND_BG_DARK`).
+
+### 33.3 Regeln
+
+| Feld | Constraints |
+|---|---|
+| `number` | "01"-"06", 2-stellig |
+| `title` | 2-4 Wörter, ALL CAPS, aktivierend (NICHT "BE HEALTHY") |
+| `description` | 8-20 Wörter, konkret + spezifisch |
+| Item-Anzahl | 3 bis 6 (4 ist Sweet Spot) |
+
+### 33.4 Layout
+
+- BG: Solid `#0A0A0F`, kein Bild
+- Logo-Block top: 80px, H1 max 30px
+- `.list-num` 28px Cyan, `.list-title` 18px weiß, `.list-desc` 14.5px weiß 78%
+- Trenner zwischen Items, Swipe-Pfeil ausgeblendet
+
+### 33.5 Don'ts
+
+- Bilder hinzufügen, Generic-Titel ("BE HEALTHY"), >6 oder <3 Items, Description >20 Wörter
+
+---
+
+## 34. ⏰ OFF-PEAK GENERATION + ENGAGEMENT-PEAK POSTING (Cron-Split)
+
+Generierung und Posten laufen in **zwei getrennten GitHub Actions Workflows** für maximale Stabilität.
+
+### 34.1 Warum split?
+
+| Aspekt | Begründung |
+|---|---|
+| Gemini Stability | ~80% weniger 503 "high demand" um 02-04 UTC |
+| AI-Bilder | Together AI FLUX hat nachts seltener Timeouts |
+| IG-Engagement | Audience aktiv 09-12 + 17-20 lokal — nachts gepostet = vergrabene Reichweite |
+| Stabilität | 6+ Stunden Buffer zwischen Gen-Fail und Post-Slot |
+
+### 34.2 Workflow-Architektur
+
+```
+.github/workflows/
+  ├── generate_carousels.yml   ← 02:00 UTC (Off-Peak)
+  │      Gemini-Plan + Cloudinary Upload + queue/POST_<ts>.json
+  ├── post_from_queue.yml      ← 08:00 + 16:00 UTC (Peak)
+  │      Liest queue, postet zu IG, → posted/
+  └── daily_post.yml           ← DEPRECATED (Manual-Fallback)
+```
+
+### 34.3 Queue-Format
+
+`queue/POST_<timestamp>.json`:
+```json
+{
+  "timestamp": "20260502_0200",
+  "topic": "Vitamin D deficiency",
+  "language": "en",
+  "caption": "...",
+  "image_urls": ["https://res.cloudinary.com/.../slide_1.png", "..."],
+  "generated_at": "2026-05-02T02:00:00"
+}
+```
+
+Nach Post: Verschoben nach `posted/`, mit `instagram_status` + `posted_at` erweitert.
+
+### 34.4 CLI
+
+`cloud_pipeline.py --save-to-queue` → schreibt nur queue/, kein IG-Post.
+
+```bash
+python post_from_queue.py              # postet ältestes
+python post_from_queue.py --dry-run    # zeigt nur was gepostet würde
+python post_from_queue.py --pick FILE  # bestimmtes File
+```
+
+### 34.5 ⏰ POSTING-ZEITEN nach Sprache/Region (WICHTIG bei neuer Brand!)
+
+Beim Onboarding NEUE Brand → IMMER fragen: "Welche Sprache + Welche Hauptregion?"
+
+| Audience | Sprache | Beste Posting-Zeiten (lokal) | Cron in UTC (Sommerzeit) | Cron in UTC (Winter) |
+|---|---|---|---|---|
+| **DE/AT/CH** | Deutsch | 09:00 + 13:00 + 19:00 | 07/11/17 UTC | 08/12/18 UTC |
+| **EU general** | Englisch | 08:00 + 12:00 + 18:00 lokal | 07/11/17 UTC | 07/11/17 UTC |
+| **USA East** | Englisch | 08:00 + 12:00 + 18:00 EST | 13/17/23 UTC | 13/17/23 UTC |
+| **USA West** | Englisch | 08:00 + 12:00 + 18:00 PST | 16/20/02 UTC | 16/20/02 UTC |
+| **USA mixed** | Englisch | 11:00 EST = 08:00 PST | 16:00 UTC + 20:00 UTC | 16:00 UTC + 20:00 UTC |
+| **UK** | Englisch | 08:00 + 13:00 + 19:00 GMT | 07/12/18 UTC | 08/13/19 UTC |
+| **Indien** | Englisch/Hindi | 08:30 + 14:00 + 20:00 IST | 03/08:30/14:30 UTC | 03/08:30/14:30 UTC |
+| **Latam (Spanisch)** | Spanisch | 09:00 + 14:00 + 20:00 (CT) | 14/19/01 UTC | 15/20/02 UTC |
+| **Australia** | Englisch | 08:00 + 12:00 + 19:00 AEST | 22/02/09 UTC | 21/01/08 UTC |
+
+**Health/Wellness/Anatomy-Content** performt am besten:
+- Morgens 09:00 lokal (Health-Routinen werden geplant)
+- Abends 19:00 lokal (Reflektions- & Recherche-Zeit)
+
+**Fitness-Content** performt am besten:
+- 06:00 lokal (Pre-Workout) und 18:00-20:00 lokal (Post-Workout)
+
+**Business/Mindset-Content** performt am besten:
+- 07:00-09:00 lokal (Morgenroutine) und 12:00 lokal (Lunchbreak)
+
+### 34.6 Cron-Werte konvertieren
+
+GitHub Actions cron läuft in **UTC**. Konvertierung:
+- DE Sommer (CEST = UTC+2): lokale Stunde - 2 = UTC
+- DE Winter (CET = UTC+1): lokale Stunde - 1 = UTC
+- USA East Sommer (EDT = UTC-4): lokale Stunde + 4 = UTC
+- USA East Winter (EST = UTC-5): lokale Stunde + 5 = UTC
+- USA West Sommer (PDT = UTC-7): lokale Stunde + 7 = UTC
+- USA West Winter (PST = UTC-8): lokale Stunde + 8 = UTC
+
+GitHub Actions berücksichtigt KEINE Sommerzeit-Umstellung. Wenn präzise lokale Zeit kritisch ist:
+- Workflow zwischen Sommer/Winter manuell anpassen (2x pro Jahr)
+- ODER: Mehrere cron-Slots setzen die beide Zeitzonen abdecken
+- ODER: Im Skript Local-Time-Check + early-exit nutzen
+
+### 34.7 Anpassen für höhere Frequenz
+
+3 Posts pro Tag:
+- Generation: `count: 3` über workflow_dispatch
+- Posting: 3 cron-Slots in `post_from_queue.yml`
+
+---
+
+## 35. 🎯 ADAPTIVE THEME-AWARE IMAGE LOGIC
+
+Damit Bilder IMMER zum Thema passen — und nicht "Business-Mann im Anzug" für einen Vitamin-D-Post — muss der Slide-Planner das Topic verstehen und das passende Subject auswählen.
+
+### 35.1 Brand-Vertical bestimmt Image-Pool
+
+Der `slide_planner.py` SYSTEM_PROMPT enthält eine **Theme → Subject Mapping**-Tabelle, die spezifisch für die jeweilige Brand-Vertical sein MUSS.
+
+Health Recode (medical/health/anatomy):
+| Topic theme | Subject choice |
+|---|---|
+| Fasting / metabolism | Person silhouette at sunrise, AI render of cells, glass of water |
+| Vitamin / mineral deficiency | Specific food source, concerned face, blood-test scene |
+| Sleep / circadian | Person sleeping, dark bedroom, brain wave AI render |
+| Hormones | AI render of gland, person reacting |
+| Heart / cardiovascular | AI render of heart muscle, person clutching chest, BP cuff |
+| Brain / mental health | AI render of brain regions, person looking pensive |
+| Gut / digestion | AI render of gut microbiome, food photo, person holding stomach |
+| Cancer / cell biology | AI render of cell mitosis, lab scene |
+| Workout / muscle recovery | Athlete in dim gym, AI render of muscle fibers |
+| Women's health | Female silhouette, AI render of ovaries/uterus |
+
+### 35.2 Bei NEUER Brand: Mapping-Tabelle KOMPLETT umschreiben
+
+Wenn ein neuer Claude diesen Guide für eine andere Vertical adaptiert (Fitness, Finance, Mindset), muss die Tabelle in `slide_planner.py` SYSTEM_PROMPT komplett ersetzt werden.
+
+Beispiel **Fitness-Brand**:
+| Topic theme | Subject choice |
+|---|---|
+| Hypertrophy | Person doing barbell row, AI render of muscle fiber |
+| Mobility | Person doing yoga pose, foam roller |
+| Cardio | Athlete running outdoor, heart-rate monitor |
+| Recovery | Athlete in ice bath, sleep tracker |
+
+Beispiel **Finance-Brand**:
+| Topic theme | Subject choice |
+|---|---|
+| Investing | Charts on screen, calm person at desk |
+| Saving | Person counting bills, savings tracker |
+
+### 35.3 Adaptive Logic — Topics außerhalb der Tabelle
+
+> "Read the topic carefully → identify the BODY SYSTEM or PROCESS involved → pick the most CONCRETE visual that DIRECTLY shows what the slide says"
+
+- "ADHD focus tricks" → person mit focused eyes / single light source
+- "Burnout" → exhausted face / cracked phone / collapsed posture
+- "Fear" → dark room / clenched hand / silhouette in shadow
+
+NIEMALS Default: "person meditating sunset" oder "businessman in suit".
+
+### 35.4 Gender-Rotation
+
+Im SYSTEM_PROMPT erzwungen:
+- ~50/50 Mann/Frau über Carousel
+- Gender-neutral wenn unisex (silhouettes, abstract body parts)
+- Female-specific (period, menopause, pregnancy) → weibliche Subjects
+- Male-specific (testosterone, prostate) → männliche Subjects
+
+### 35.5 Brand-Vertical Override (No-Go-List)
+
+Health Recode darf NIEMALS zeigen:
+- Suit-and-tie Business-Fotos
+- Hustle-Culture / Gold / Geld / "Erfolg"
+- Generic Stock "Thumbs up" / "High Five"
+- Office / Laptop (außer Topic ist Screen-Time)
+
+Bei NEUER Brand: Liste komplett neu definieren.
+
+### 35.6 Onboarding-Erweiterung (Sektion 8 ergänzen)
+
+Beim ersten Setup zusätzlich fragen:
+- "Vertical?" (medical/fitness/finance/mindset/business/...)
+- "Sprache + Hauptregion?" (siehe Sektion 34.5 für Posting-Zeiten)
+- "Image-Subjects erlaubt?" (Mensch/Tier/Anatomie/Objekt/Abstract)
+- "Image-Subjects verboten?" (Brand-No-Gos)
+- "Demographic?" (für Gender/Alter-Rotation)
+
+Mit diesen Antworten Mapping-Tabelle in slide_planner.py NEU SCHREIBEN.
+
+### 35.8 HERO IMAGE VARIETY — Anti-Sameness Rule
+
+**Problem:** Gemini fällt zu oft auf "man face close-up" als Hero-Default zurück. Dadurch sehen alle Carousels gleich aus → Algorithmus-Stagnation, Audience-Müdigkeit.
+
+**Lösung:** Im SYSTEM_PROMPT von `slide_planner.py` ist eine **8-Kategorien-Rotation** für Hero-Bilder erzwungen:
+
+1. **Anatomical AI Render** — Organ/System Close-up
+2. **Action Shot** — Person beim TUN (laufen, schlafen, trinken)
+3. **Object Hero** — Topic-Kernobjekt allein (Pille, Glas Wasser, Frühstück)
+4. **Environment Shot** — Weite Aufnahme des Raums (Schlafzimmer, Labor, Küche)
+5. **Body Part Detail** — Extreme Close-up von Hand/Fuß/Auge/Haut (kein Gesicht)
+6. **Silhouette / Backlit** — Person im Schatten (Gender-neutral)
+7. **Macro / Microscopic** — Zellen, Microbiome, Neuronen
+8. **Split-Frame Concept** — Vorher/Nachher, kontrastierende Zustände
+
+**Verboten als Hero (ohne explizit faciale Topic-Begründung):**
+- "Man's face close to camera"
+- "Concerned woman with hand on forehead"
+- "Smiling person at sunset"
+- "Suit person at desk"
+- "Yoga pose at sunset"
+- "Person holding vegetable smiling"
+
+**Topic-Mapping:**
+| Topic-Typ | Hero-Kategorie |
+|---|---|
+| Hormone/Mechanismus | Anatomical Render / Macro |
+| Routine/Habit | Action Shot / Environment |
+| Symptom/Warnsignal | Body Part Detail / Silhouette |
+| Transformation | Split-Frame |
+| Nahrungsmittel | Object Hero (Lebensmittel allein) |
+
+**Wenn doch Gesicht nötig:** Nur Side-Profile oder 3/4-Angle, kein direkter Close-up.
+
+**Innerhalb EINES Carousels:** Niemals zwei Slides aus derselben Kategorie. Hero=Render → Content-Slides müssen Action/Object/Environment/Macro sein.
+
+**Bei NEUER Brand:** Diese 8 Kategorien anpassen je nach Vertical. Z.B. Fitness-Brand → "Spotter pushing barbell", "ice bath water surface", "shoes laces close-up". Finance-Brand → "stock chart screen detail", "coin stack object", "office window environment".
+
+### 35.9 WOMAN VARIETY — Aktivität an Topic anpassen
+
+**Problem:** Gemini fällt für "Frauen-Bilder" zu oft auf "Businesswoman im Anzug" oder "Frau mit Hand am Kopf besorgt close-up" zurück. Das ist langweilig und passt selten zum Topic.
+
+**Lösung:** Aktivität RICHTIG am Topic ausrichten — nicht Default-Business-Outfit.
+
+**Topic → Frauen-Kontext (für Health/Fitness Brand):**
+
+| Topic | Frauen-Aktivität |
+|---|---|
+| Fitness / Workout / Muscle | Hanteln heben, Yoga-Flow, draußen laufen, Boxen im Gym |
+| Nutrition / Wasser / Fasten | Wasser trinken bei Sonnenaufgang, Obst halten, kochen |
+| Schlaf / Circadian | Schlafend im dunklen Schlafzimmer, friedlich aufwachen |
+| Hormone / Periode / Fertility | Hand auf Bauch, Frauen-Silhouette, Period-Tracker in Hand |
+| Stress / Mental Health | Frau in Natur nachdenklich (KEIN direktes Gesicht), Silhouette am Fenster |
+| Skin / Beauty (nur wenn Topic) | Side-Profile Skincare, Hand Serum auftragen, NICHT Stare in Kamera |
+| Pregnancy / Motherhood | Bauch haltend, Mutter+Baby, abstrakte Silhouette |
+| Mindset / Focus | Buch lesend, Journaling, Wandern mit Rucksack |
+| Recovery / Yoga | Krieger-Pose, Foam-Rolling, Stretching zuhause |
+| Business (NUR bei Medical: stress-from-work) | DANN Anzug ok, sonst NIE |
+
+**Verboten als Default:**
+- "Businesswoman im Blazer am Schreibtisch"
+- "Frau Hand am Kopf besorgt" (außer Topic ist explizit Kopfschmerzen)
+- Direkter Close-up Stare in Kamera (außer Gesichts-Anatomie-Topic)
+- Stock "lächelnde Frau mit grünem Smoothie + Daumen hoch"
+
+**Bei NEUER Brand (Vertical-spezifisch):**
+- Fitness-Brand → Workout-Aktivitäten dominant
+- Finance-Brand → Frau im Anzug ok (passt dann)
+- Mindset-Brand → Frau lesend / journaling / nachdenklich
+- Cooking-Brand → Frau in Küche kochend
+Tabelle entsprechend anpassen je nach Brand-Vertical.
+
+### 35.7 Connection zu generate_carousel.py
+
+Renderer (`get_slide_image()`) interpretiert:
+- `pexels_query` → Pexels (Stock-Photos)
+- `ai_render: true` + `ai_prompt` → Together AI FLUX (Anatomie/Konzepte)
+- `google_query` → Google Custom Search (echte Personen)
+- `solid_color` → einfarbig (List-Slides)
+
+Adaptive Logic gehört IM PLANNER (nicht im Renderer). Renderer ist dumm — er nimmt was der Planner ihm gibt.
+
+---
+
+## 36. 🎨 COMPLETE STYLE BIBLE — Copy-paste-ready Specs
+
+Alle Pixel-Werte, Fonts, Farben, CSS-Klassen und HTML-Templates an einem Ort. Damit ein neuer Claude die Carousel-Renderer 1:1 nachbauen kann ohne Trial-and-Error.
+
+### 36.1 Google Fonts URL (alle benötigten Fonts)
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@500;700&family=Inter:wght@300;400;600;700;800&family=Oswald:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+```
+
+| Font | Verwendung |
+|---|---|
+| **Oswald** | H1 Headlines (Content/Hero/List Slides) — kondensierter Sans, fettbar |
+| **Bebas Neue** | Outro-Texte (extra kondensiert, sieht edel/clean aus) |
+| **Inter** | Body-Text, List-Description, Subtle UI |
+| **Plus Jakarta Sans** | Profile-Card Inhalt (modern, lesbar) |
+| **Caveat** | "Share this with your Friends →" Cursive-Footer |
+| **JetBrains Mono** | Vital-Signs Strip (HR/SpO₂/T) — Monospace medizinisch |
+| **Anton** | Fallback für Oswald (sehr kondensiert) |
+
+### 36.2 Brand Constants (Health Recode)
+
+```python
+BRAND_DISPLAY = "HEALTH RECODE"
+BRAND_WORD_LEFT = "HEALTH"
+BRAND_WORD_RIGHT = "RECODE"
+BRAND_HANDLE = "@healthrecode"
+BRAND_PRIMARY = "#00CFE8"      # Cyan/Türkis
+BRAND_BG_DARK = "#0A0A0F"      # Near-black
+```
+
+Bei NEUER Brand alle 6 Werte neu setzen + Logo-PNG-Files austauschen.
+
+### 36.3 Slide-Größen (FIX, nicht ändern)
+
+```python
+VIEW_W, VIEW_H = 420, 525     # Render-Viewport
+SCALE = 1080 / 420            # 2.5714 — für 1080×1350 Export
+# Final Output: 1080 × 1350 (Instagram 4:5)
+```
+
+### 36.4 H1 Headline (Content/Hero Slides)
+
+```css
+.headline {
+  font-family: 'Oswald', 'Anton', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.0;
+  letter-spacing: 0.3px;
+  color: white;
+  margin-bottom: 2px;
+  text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40);
+  /* font-size kommt per inline style aus calc_headline_size() */
+}
+```
+
+**Auto-Size-Logik** (`calc_headline_size`):
+| Char-Count | Größe |
+|---|---|
+| <25 | 39px |
+| 25-40 | 34px |
+| 40-55 | 30px |
+| 55-75 | 26px |
+| 75-100 | 22px |
+| 100-130 | 20px |
+| >130 | 17px |
+
+### 36.5 H2 Subhead (Content/Hero Slides)
+
+```css
+.subhead {
+  font-family: 'Oswald', 'Anton', sans-serif;
+  font-weight: 400;            /* NICHT default-bold */
+  text-transform: uppercase;
+  line-height: 1.18;
+  letter-spacing: 0.3px;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 0;
+  margin-top: 14px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.50);
+}
+```
+
+**Größe:** `max(20, headline_size * 0.75 + 2)` (= ~22-29px)
+
+### 36.6 Style-Segmente (per-Wort-Stile in headline_parts)
+
+Aus `render_headline()`:
+
+| Style | CSS |
+|---|---|
+| `"primary"` | `color: #00CFE8; font-weight: 700` (Brand-Farbe, fett) |
+| `"bold"` | `color: white; font-weight: 700` (weiß, fett) |
+| `"regular"` | `color: rgba(255,255,255,0.92); font-weight: 300` (weiß, dünn) |
+| `"normal"` | `color: white; font-weight: 400` (weiß, regulär) |
+| `"white"` | `color: white; font-weight: 700` (Default, weiß fett) |
+
+Mische pro Zeile für Rhythm: `[("AT HOUR ", "regular"), ("12", "primary"), (", BODY ENTERS ", "regular"), ("KETOSIS", "bold")]`
+
+### 36.7 Description (3. Text-Ebene, klein)
+
+```css
+.description {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-top: 22px;
+}
+.description.outro-desc {  /* Override für Outro-Slides */
+  font-size: 15px;
+  line-height: 1.45;
+  margin-top: 18px;
+  font-weight: 500;
+}
+```
+
+### 36.8 Logo Block (zwischen H1 und Bild)
+
+```html
+<div class="logo-block">
+  <div class="logo-line left"></div>
+  <span class="logo-text">HEALTH</span>
+  <img class="logo-center-icon" src="..." alt="logo"/>
+  <span class="logo-text">RECODE</span>
+  <div class="logo-line right"></div>
+</div>
+```
+
+```css
+.logo-block { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.logo-line { flex: 0 0 70px; height: 1px; background: linear-gradient(to right, transparent, #00CFE8, #00CFE8); }
+.logo-line.right { background: linear-gradient(to left, transparent, #00CFE8, #00CFE8); }
+.logo-text { font-family: 'Inter'; font-weight: 600; font-size: 11px; letter-spacing: 2.5px; color: white; }
+.logo-center-icon { width: 16px; height: 16px; object-fit: contain; }
+```
+
+### 36.9 Vital-Signs Strip (Top-Right Signature)
+
+```html
+<div class="vitals-strip">
+  <span class="pulse-dot"></span>
+  <span class="label">HR</span> <span class="value">72</span>
+  <span class="label">·</span>
+  <span class="label">SpO₂</span> <span class="value">98%</span>
+  <span class="label">·</span>
+  <span class="label">T</span> <span class="value">36.7°C</span>
+</div>
+```
+
+```css
+.vitals-strip {
+  position: absolute; top: 14px; right: 14px; z-index: 6;
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 8px;
+  background: rgba(0,0,0,0.18);
+  backdrop-filter: blur(4px);
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.05);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5px;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.3px;
+}
+.vitals-strip .label { color: rgba(255,255,255,0.35); }
+.vitals-strip .value { color: rgba(0,207,232,0.75); font-weight: 700; }
+.vitals-strip .pulse-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(0,207,232,0.75); }
+```
+
+Werte rotieren pro Slide aus `vitals_values` Array (HR 68-76, SpO₂ 97-99%, T 36.5-36.8°C).
+
+### 36.10 Swipe-CTA (Bottom "SWIPE FOR MORE")
+
+```html
+<div class="swipe-cta">
+  <span>SWIPE FOR MORE</span>
+  <svg class="swipe-arrow-mini" viewBox="0 0 24 24" fill="none">
+    <path d="M9 6l6 6-6 6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+```
+
+```css
+.swipe-cta {
+  position: absolute; bottom: 30px; left: 0; right: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.swipe-cta span { font-family: 'Inter'; font-size: 13px; letter-spacing: 3px; color: rgba(255,255,255,0.85); font-weight: 600; }
+.swipe-arrow-mini { width: 11px; height: 11px; stroke: rgba(255,255,255,0.85); }
+```
+
+NICHT auf List-Slides, NICHT auf CTA, NICHT auf Outro.
+
+### 36.11 Right-Arrow (Pfeil mitte rechts)
+
+```html
+<div class="swipe-arrow-right">
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M9 6l6 6-6 6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+```
+
+```css
+.swipe-arrow-right {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 7;
+}
+.swipe-arrow-right svg { width: 14px; }
+```
+
+NICHT auf List, CTA, Outro.
+
+### 36.12 Follow-CTA Klein (Standard, über Swipe)
+
+```css
+.follow-cta {
+  font-family: 'Inter';
+  font-size: 9px;             /* dezent, ~18% kleiner als H2 */
+  font-weight: 300;           /* dünn, nicht aufdringlich */
+  letter-spacing: 1.4px;
+  color: #00CFE8;
+  text-transform: uppercase;
+  margin-top: 14px;           /* deutlicher Abstand zum H2-Block */
+}
+```
+
+Inhalt: `FOLLOW @HEALTHRECODE TO NOT MISS MORE`
+
+### 36.13 List-Slide (Tipp-Slide, kein Bild)
+
+```css
+.bottom-stack.list-stack {
+  top: 80px; bottom: 70px;
+  justify-content: flex-start;
+  gap: 8px; padding: 0 28px;
+}
+.list-items { display: flex; flex-direction: column; width: 100%; margin-top: 14px; text-align: left; }
+.list-row {
+  display: flex; align-items: flex-start; gap: 14px; padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.10);
+}
+.list-row:first-child { border-top: none; }
+.list-num {
+  flex: 0 0 38px;
+  font-family: 'Oswald'; font-size: 28px; font-weight: 600;
+  color: #00CFE8; line-height: 1; letter-spacing: 0.5px;
+}
+.list-title {
+  font-family: 'Oswald'; font-weight: 700;
+  text-transform: uppercase; font-size: 18px;
+  letter-spacing: 0.5px; color: white; line-height: 1.15;
+}
+.list-desc {
+  font-family: 'Inter'; font-weight: 400;
+  font-size: 14.5px; line-height: 1.4;
+  color: rgba(255,255,255,0.78);
+}
+```
+
+### 36.14 Outro-Slide (Ronin-Style, vollständig inline-styled)
+
+Outro ist KEIN Standard-Slide. Es nutzt komplett eigene HTML-Struktur (siehe `slide_html()` `if is_outro_final:` Branch).
+
+**Layout-Stack (von oben nach unten):**
+
+1. **BG-Image** (athletic silhouette via AI render) + dark overlay 85→97%
+2. **Vital-Signs Strip** (Top-Right)
+3. **DROP A 🔥** (Bebas Neue 34px, weight 400, ls 1.5px, margin-bottom 14px)
+4. **IF YOU LEARNED &nbsp; SOMETHING NEW!** (Bebas Neue 20px, ls 1.5px, margin-bottom 16px)
+5. **WHICH FACT [SHOCKED] YOU MOST?** (Bebas Neue 17px, ls 1.5px, margin-bottom 4px)
+6. **TELL ME IN THE [COMMENTS] 👇** (Bebas Neue 17px, ls 1.5px, margin-bottom 18px)
+7. **FOLLOW [@HEALTHRECODE] TO NOT MISS MORE!** (Bebas Neue 22px, ls 1.5px, line-height 1.05, white-space nowrap, margin-bottom 18px)
+8. **Profile-Card** (siehe 36.15)
+9. **"Share this with your Friends →"** (Caveat 20px, weight 600, opacity 0.9)
+
+[SHOCKED], [COMMENTS], [@HEALTHRECODE] = Brand-Color Cyan #00CFE8
+
+**Container:**
+```html
+<div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 28px 30px;">
+```
+
+### 36.15 Profile-Card (Outro, HTML-Built statt JPEG)
+
+```html
+<div style="width:96%;max-width:340px;border:1px solid #00CFE8;border-radius:8px;
+            padding:12px 14px;display:flex;align-items:flex-start;gap:12px;
+            margin-bottom:14px;text-align:left;background:rgba(0,0,0,0.5);">
+  <!-- Avatar -->
+  <div style="width:62px;height:62px;border-radius:50%;flex-shrink:0;overflow:hidden;
+              background:#0A0A0F;border:1.5px solid #00CFE8;">
+    <img src="<healthrecodeicon.png base64>" style="width:100%;height:100%;object-fit:cover;"/>
+  </div>
+  <!-- Content -->
+  <div style="flex:1;min-width:0;">
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
+      <span style="font-family:'Plus Jakarta Sans';font-weight:700;color:#fff;font-size:14px;">healthrecode</span>
+      <span style="color:#999;font-size:12px;">⋯</span>
+    </div>
+    <div style="font-family:'Plus Jakarta Sans';font-size:11px;color:#fff;margin-bottom:5px;">
+      Health | Fitness | Medical | Mindset
+    </div>
+    <div style="display:flex;gap:11px;font-family:'Plus Jakarta Sans';font-size:10.5px;color:#fff;margin-bottom:5px;">
+      <span><b>98</b> Posts</span>
+      <span><b>610</b> Followers</span>
+      <span><b>572</b> Following</span>
+    </div>
+    <div style="font-family:'Plus Jakarta Sans';font-size:10px;color:#999;line-height:1.35;">
+      Recode your body. Transform your life. Daily science-backed health.
+    </div>
+  </div>
+</div>
+```
+
+Bei NEUER Brand: Border-Color tauschen, Avatar-PNG, Handle, Bio-Text, Counts.
+
+### 36.16 BG-Gradient Standard (Content-Slides)
+
+```css
+.bg-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(10,10,15,0.55) 0%,
+    rgba(10,10,15,0.30) 18%,
+    rgba(10,10,15,0.20) 30%,
+    rgba(10,10,15,0.45) 45%,
+    rgba(10,10,15,0.78) 60%,
+    rgba(10,10,15,0.94) 75%,
+    rgba(10,10,15,0.99) 90%,
+    rgba(10,10,15,1.0) 100%
+  );
+}
+```
+
+Sorgt für: Bild oben durchsichtig, Text unten klar lesbar.
+
+### 36.17 Bottom-Stack (Standard-Container für Text)
+
+```css
+.bottom-stack {
+  position: absolute;
+  bottom: 70px; top: 55%;     /* Text in unteren 45% des Slides */
+  left: 0; right: 0;
+  padding: 0 24px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  gap: 6px; z-index: 5;
+  text-align: center;
+}
+.bottom-stack.top-position { top: 40px; bottom: auto; gap: 10px; }
+.bottom-stack.list-stack { top: 80px; bottom: 70px; justify-content: flex-start; gap: 8px; padding: 0 28px; }
+```
+
+### 36.18 Engagement-Banner (auf Mid-Carousel "💾 SAVE THIS POST")
+
+```css
+.engagement-banner {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #00CFE8;       /* Brand Primary */
+  color: black;              /* Bewusster Kontrast */
+  font-family: 'Inter';
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+```
+
+### 36.19 Slide-Type → Komponenten-Matrix
+
+| Slide-Type | Logo-Block | H1 | H2 | Description | Engagement-Banner | Big-Follow-CTA | Profile-Card | Swipe-Arrow Right | Swipe-CTA Bottom | List-Items |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hero` | ✅ | ✅ | ✅ | – | – | – | – | ✅ | ✅ | – |
+| `content` | ✅ | ✅ | ✅ | – | optional | – | – | ✅ | ✅ | – |
+| `engagement` | ✅ | ✅ | ✅ | – | ✅ | – | – | ✅ | ✅ | – |
+| `cta` | ✅ | ✅ | ✅ | – | – | – | – | – | – | – |
+| `list` | ✅ | ✅ | – | – | – | – | – | – | – | ✅ |
+| `outro_final` | – | inline | inline | inline | – | inline | ✅ | – | – | – |
+
+### 36.20 Playwright Export (FIX, nicht ändern)
+
+```python
+VIEW_W, VIEW_H = 420, 525
+SCALE = 1080 / 420  # 2.5714
+
+await page.evaluate("""() => {
+  document.body.style.cssText = 'padding:0;margin:0;display:block;overflow:hidden;background:#0A0A0F;';
+  const frame = document.querySelector('.ig-frame');
+  frame.style.cssText = 'width:420px;height:525px;overflow:hidden;margin:0;';
+  const vp = document.querySelector('.carousel-viewport');
+  vp.style.cssText = 'width:420px;height:525px;overflow:hidden;position:relative;';
+}""")
+
+# Pro Slide:
+await page.evaluate("""(idx) => {
+  const t = document.getElementById('track');
+  t.style.transition = 'none';
+  t.style.transform = 'translateX(' + (-idx * 420) + 'px)';
+}""", i)
+await page.screenshot(path=..., clip={x:0,y:0,width:420,height:525})
+```
+
+`device_scale_factor=2.5714` → liefert 1080×1350 PNG aus 420×525 Layout.
+
+---
+
+**Wenn ein neuer Claude alles aus Sektion 36 verwendet (gepaart mit Sektion 17 aus dem Original-Style-Bible), kann er das komplette Carousel-System für eine andere Brand nachbauen indem er nur folgendes ändert:**
+1. Brand Constants (36.2)
+2. Logo-PNGs (healthrecodeicon.png, healthrecordlogotrans.png)
+3. Profile-Card Inhalt (36.15) — Handle, Bio, Counts
+4. Optional: Brand-Color (#00CFE8) → andere Farbe in allen CSS-Werten
+5. Optional: Theme-Mapping in slide_planner.py SYSTEM_PROMPT (Sektion 35)
+
+---
+
+## 37. 📝 CAPTION CTA RULE — Engagement-Closer am Ende jedes Posts
+
+Jede IG-Caption MUSS mit einem klaren Engagement-CTA enden (vor den Hashtags). Das ist im `slide_planner.py` SYSTEM_PROMPT erzwungen — Gemini generiert es automatisch.
+
+### 37.1 Pflicht-Bestandteile (alle 4):
+
+1. **Save-Reminder** — "Save this so you don't lose it" / "Save for later"
+2. **Share-Prompt** — "Share with someone who needs this" / "Send to a friend"
+3. **Follow-Nudge** — "Follow @healthrecode for daily science" / "Follow for more"
+4. **Don't-forget-Closer** — "Don't forget!" / "Pinky promise it'll change your week"
+
+### 37.2 Beispiel-Variationen (Gemini rotiert sie):
+
+```
+💾 Save this so you don't lose it. Tag a friend who needs to see this.
+Follow @healthrecode for daily science-backed health.
+Don't forget — your future body will thank you.
+```
+
+```
+Save it. Share with someone who's been asking about this.
+Follow @healthrecode for more like this — daily.
+Don't sleep on this 🔥
+```
+
+```
+If this hit, save it for later, send to a friend,
+and follow @healthrecode for daily medical breakdowns.
+Don't miss the next one!
+```
+
+### 37.3 Caption-Struktur (komplett, von oben nach unten):
+
+1. **Hook-Line** (1 Satz, knackig — same vibe as Slide 1 H1)
+2. **3-5 educational facts** (science-backed, mit Zahlen/Hormonnamen)
+3. **5 Emoji** verteilt (nicht gestapelt)
+4. **CTA-Block** (4 Bestandteile aus 37.1)
+5. **8 Hashtags** ganz am Ende
+
+### 37.4 Tone
+
+Warm, freundlich, **NICHT salesy**. Sprich wie ein wissender Freund — nicht wie eine Werbeanzeige.
+
+### 37.5 Bei NEUER Brand
+
+Falls eine andere Brand (z.B. Fitness statt Medical), nur den Handle (`@healthrecode`) und die Brand-Persönlichkeit anpassen. Die 4 CTA-Bestandteile bleiben gleich (Save/Share/Follow/Don't-forget) — das ist universal Engagement-Psychologie für IG-Algorithmus.
+
+---
+
+## 38. ♾️ FOREVER-TOKEN STRATEGY — Pipeline läuft ohne manuellen Token-Refresh
+
+Standard-Problem: IG-Tokens laufen nach 60 Tagen ab → Pipeline stirbt → manueller Refresh nötig. **Lösung: Auto-Refresh per Cron.** Token läuft dadurch unendlich, ohne Eingriff.
+
+### 38.1 Wie es funktioniert
+
+Instagram Login API Tokens (`IGAA...`, 60 Tage gültig) können UNBEGRENZT verlängert werden, solange sie alle <60 Tage refresht werden. Das passiert automatisch:
+
+```
+.github/workflows/refresh_token.yml
+  Cron: alle 50 Tage (7x/Jahr) um 03:00 UTC
+  → ruft refresh_ig_token.py auf
+  → POST https://graph.instagram.com/refresh_access_token
+  → bekommt neuen Token (60 Tage gültig)
+  → schreibt neuen Token via `gh secret set` in Repo-Secret zurück
+```
+
+Sicherheits-Buffer: 10 Tage (Refresh nach 50 von 60 Tagen).
+
+### 38.2 Setup einmalig (Forever-Token aktivieren)
+
+1. **GitHub Personal Access Token erstellen** mit `repo` + `workflow` + `secrets:write` Scopes:
+   - https://github.com/settings/tokens → "Generate new token (classic)"
+   - Name: "Health Recode Token Refresh"
+   - Scopes: `repo`, `workflow`, `admin:repo_hook` (für secrets:write brauchst du fine-grained PAT mit Repository-secrets:write)
+
+2. **PAT als Repo-Secret speichern:**
+   - Settings → Secrets and variables → Actions → New repository secret
+   - Name: `GH_PAT_FOR_SECRETS`
+   - Value: `<dein-PAT>`
+
+3. **Manueller Test-Run:**
+   - Actions → "Auto-Refresh IG Token (Forever)" → Run workflow
+   - Checken ob "OK — Repo-Secret aktualisiert" im Log steht
+
+4. **Fertig.** Cron läuft danach 7x/Jahr automatisch.
+
+### 38.3 Files
+
+| File | Zweck |
+|---|---|
+| `refresh_ig_token.py` | Standalone-Script, refresht Token via IG-API. CLI: `--quiet` (nur Token), `--update-env` (lokal in .env schreiben) |
+| `.github/workflows/refresh_token.yml` | Cron-Workflow, läuft alle 50 Tage |
+
+### 38.4 Alternative: Facebook Page Access Token (NIEMALS abläuft)
+
+**Wenn du komplett ohne Refresh willst:** Switch zu Meta Graph API (statt IG Login API) mit Page Access Token.
+
+| Token-Typ | Lebensdauer |
+|---|---|
+| User Access Token (User-Login) | 60 Tage, refresh nötig |
+| Long-Lived User Token (über setup_meta_credentials.py) | 60 Tage, refresh nötig |
+| **Page Access Token** (aus Long-Lived User Token abgeleitet) | **NIEMALS abläuft** ⭐ |
+
+**Page Token bekommen** (einmalig):
+1. Long-Lived User Token erzeugen (Graph API Explorer oder OAuth-Flow)
+2. Page-Token ableiten:
+   ```
+   GET https://graph.facebook.com/v21.0/me/accounts
+     ?access_token=<long_lived_user_token>
+   ```
+3. Im Response findest du das `access_token` für deine Page → DAS läuft nicht ab.
+4. Speichern als `FB_PAGE_ACCESS_TOKEN` in Repo-Secrets.
+
+**Für IG-Posting via Page Token:**
+- Endpoint: `https://graph.facebook.com/v21.0/{ig-business-account-id}/media`
+- Auth: `?access_token={FB_PAGE_ACCESS_TOKEN}`
+- Funktioniert wenn FB-Page mit IG-Business-Account verknüpft ist (Account-Center)
+
+**Page Token läuft nur ab wenn:**
+- FB-App gelöscht wird
+- Token manuell widerrufen wird
+- User-Passwort-Reset triggert (selten)
+
+### 38.5 Welcher Weg ist besser?
+
+| Aspekt | IG Login API + Auto-Refresh | FB Page Token (forever) |
+|---|---|---|
+| Setup-Komplexität | Mittel (PAT + Workflow) | Hoch (FB-App, Page, Account-Center) |
+| Wartung | Cron läuft 7x/Jahr | Nie |
+| Bricht wenn... | GH PAT abläuft (max 1 Jahr) | FB-App gelöscht / Passwort reset |
+| Empfohlen für | Aktuelles Health Recode Setup | Neue Brands ohne Legacy |
+
+**Empfehlung für Health Recode (UPDATED):** Nutze FB Page Access Token (38.4) als PRIMÄRE Auth — läuft NIE ab, kein Cron-Refresh nötig.
+- Pipeline ist seit Mai 2026 so umgestellt: postet zuerst zu IG (mit IG_USER_ACCESS_TOKEN), dann Cross-Post zu FB Page (mit FB_PAGE_ACCESS_TOKEN).
+- IG-Token weiterhin alle 50 Tage auto-refresht (Backup), aber FB Page Token ist primärer "Forever-Anker".
+
+### 38.7 ⭐ FB Cross-Posting
+
+**Es gibt 2 Wege — wähle nach Komfort:**
+
+#### WEG A — Meta Account Center (EMPFOHLEN, KEIN Code/Setup nötig)
+
+Wenn dein IG Business Account mit einer FB Page über das Meta Account Center verknüpft ist, postet Meta automatisch jeden IG-Post auch zu deiner FB Page. **Null Code-Aufwand, null Tokens.**
+
+So einrichten in der Instagram App:
+1. **Profil → Menü (≡) → Account Center**
+2. **"Connected experiences" → "Sharing across profiles"**
+3. **"Recommend on Facebook"** für deinen IG-Account aktivieren
+4. **"Auto-share to Facebook"** ON
+
+Nach Aktivierung: Jeder IG-Post (auch von der API) wird automatisch zu FB geposted. Deine Pipeline braucht keine FB-Secrets mehr.
+
+✅ **Marwan hat das aktiviert (Mai 2026) — die Health-Recode Pipeline läuft mit dieser Methode.** Der Code in `post_to_facebook()` (siehe WEG B) bleibt als Backup im Repo, ist aber inaktiv solange `FB_PAGE_ACCESS_TOKEN` Secret leer ist.
+
+#### WEG B — FB Page Token via Meta Graph API (Code-basiert, falls Account Center nicht funktioniert)
+
+Wenn aus irgendeinem Grund Account Center Cross-Post NICHT funktioniert (z.B. Account-Trennung, Region-Restriktion, neue Brand ohne FB-Verknüpfung), kann die Pipeline explizit zu FB posten via FB Page Access Token:
+
+```
+[Post IG] Sende zu Instagram...   → IG_USER_ACCESS_TOKEN (60d, auto-refresh)
+[Post FB] Cross-Post zu Facebook... → FB_PAGE_ACCESS_TOKEN (FOREVER)
+```
+
+Code in `cloud_pipeline.py` + `post_from_queue.py` ruft beide Endpoints auf. Wird aktiviert wenn `FB_PAGE_ACCESS_TOKEN` + `FB_PAGE_ID` als Repo-Secrets gesetzt sind. Sonst Status: `skipped (FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN fehlt)`.
+
+**Setup einmalig:**
+
+1. **FB Page erstellen** (falls noch nicht vorhanden):
+   - facebook.com → "Page erstellen" → Business or Brand → "Health Recode"
+
+2. **FB App erstellen** auf https://developers.facebook.com/apps:
+   - Type: Business
+   - Name: "Health Recode Auto-Post"
+   - Add Product: "Facebook Login" + "Pages API"
+
+3. **Long-Lived User Token erzeugen** im Graph API Explorer:
+   - graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token
+   - Permissions: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`
+
+4. **Page Access Token ableiten** (das ist der FOREVER-Token):
+   ```bash
+   curl "https://graph.facebook.com/v21.0/me/accounts?access_token=<long_lived_user_token>"
+   ```
+   Im Response findest du dein FB Page-Objekt mit `access_token` Feld → DAS ist der Token den du brauchst.
+   Auch die `id` deiner Page brauchst du (FB_PAGE_ID).
+
+5. **Als Repo-Secrets speichern**:
+   - Settings → Secrets → New
+   - `FB_PAGE_ACCESS_TOKEN` = `<page_token>` (läuft NIE ab)
+   - `FB_PAGE_ID` = `<numerische page_id>`
+
+6. **Test**: Manueller Run von `post_from_queue.yml` → checken ob "FB Status: fb_posted: ..." im Log steht.
+
+**Was passiert dann:**
+- Carousel wird zu IG gepostet (Carousel-Format)
+- Gleichzeitig zu FB Page gepostet (als Multi-Photo-Album)
+- Beide nutzen identische Caption + Bilder
+- Reach verdoppelt sich potenziell
+
+### 38.6 Bei NEUER Brand
+
+- Falls du komplett neu startest: Page Access Token (38.4) ist eleganter (kein Refresh nötig, keine PAT-Abhängigkeit)
+- Falls du bereits IG Business Account ohne FB-App-Setup hast: IG Login API + Auto-Refresh (38.1) ist schneller einzurichten
+
+In beiden Fällen: **kein manueller Token-Refresh mehr** — die Pipeline läuft selbstständig.
+
+---
+
+## 39. 🚨 LESSONS LEARNED — 44 Bugs aus Vorgänger-Build (PFLICHT-LEKTÜRE)
+
+Diese Sektion sammelt ALLE Fehler die im Ronin-Codex Build gemacht wurden (separates Brand-Projekt mit gleicher Pipeline-Architektur). **Jeder Bug hat Stunden gekostet.** Ein neuer Claude MUSS diese Sektion zuerst lesen — sonst wiederholen sich diese Fehler garantiert.
+
+### 39.1 ⚡ TL;DR — Die 3 wichtigsten Lessons
+
+1. **PIPELINE END-TO-END TESTEN BEVOR PUSH** — Live-Post auf IG zeigte nur Background-Foto OHNE Layout, weil Render-Step nicht integriert war. Verifiziere visuell den finalen Output gegen Reference-Image, BEVOR du irgendwas zu GitHub pushst.
+
+2. **EXAMPLES = SOURCE OF TRUTH** — Existierender `example_carousel/export_slides.py` war von Anfang an im Repo, wurde ignoriert, deshalb wurden rohe Background-Bilder gepostet statt gerenderter Carousels. Bei jedem Pipeline-Schritt fragen: "Existiert ein Example? Wenn ja → INTEGRIEREN, nicht umgehen."
+
+3. **MULTI-FILE-UPDATES MIT GREP-SEARCH** — Wenn du eine Sache in einem File fixt, MUSST du grep alle Stellen wo dieser Pattern vorkommt. Niemals "ich hab Slide 4 gefixt" sagen wenn 5 weitere Slides die gleiche Stelle haben.
+
+### 39.2 🟢 PFLICHT-Fragen vor erster Code-Zeile (spart >20 Stunden)
+
+**Bevor du irgendwas baust**, frage den User diese 8 Punkte. Ohne klare Antworten BAU NICHT AN:
+
+1. **Visual-Direction** — schickt der User 3-5 Reference-Bilder?
+2. **Audience** — Männer / Frauen / beide? Welches Alter? Sprache? Region?
+3. **Posting-Frequenz** — 1x/Tag, 2x, 3x?
+4. **Auto-Post oder manuell?**
+5. **Wartungs-Toleranz** — Forever-Run oder OK mit wöchentlicher Maintenance?
+6. **Topic-Pillars** — 3-5 konkrete Themen-Säulen
+7. **Slide-Count** — 8, 9, 10, oder dynamisch 3-15?
+8. **CTA-Style** — Reference-Image für die letzte Slide
+
+Erst klären, dann coden.
+
+### 39.3 ⚡ Vor jedem Push — 3-Punkt Sanity-Check
+
+Bevor du auch nur EINE Zeile zu GitHub pushst:
+
+1. **"Macht das Code überhaupt das was beabsichtigt war?"** — Read your own code
+2. **"Habe ich End-to-End getestet — visuell?"** — Final-Output gegen Reference-Image
+3. **"Habe ich alle Stellen gefixt wo dieser Pattern vorkommt?"** — Grep-Search
+
+Wenn nein zu auch nur EINER → noch nicht pushen. Mehr code = mehr bugs.
+
+### 39.4 🔴 7 Root-Causes — Warum so viele Fehler passiert sind
+
+| # | Root-Cause | Prevention |
+|---|---|---|
+| 1 | Pipeline NIE End-to-End getestet | Lokaler Manual-Test mit visueller Verifikation vor JEDEM Push |
+| 2 | Style-Direction 4× geflippt | Visual-Direction am Anfang locken mit 3-5 Reference-Bildern + AskUserQuestion |
+| 3 | Examples ignoriert die schon existierten | Examples = Source-of-Truth. Bei jedem Step fragen: "Existiert ein Example?" |
+| 4 | Multi-File-Updates inkonsistent | Grep alle Stellen VOR dem Update, dann ALLE auf einmal |
+| 5 | User-Frustration ignoriert | Bei "ich hab das schon gesagt" → STOP, scrollback, neu lesen |
+| 6 | GitHub-Setup vor lokal-stable | Lokal grün = Voraussetzung für Push (inkl Python-Version-Match) |
+| 7 | Layout-Polishing vor Functionality | Functional-First, Polish-Second. Live-Post-Check vor Pixel-Anpassungen |
+
+### 39.5 🔴 KRITISCHER BUG — Render-Step nicht integriert (BUG #32)
+
+**Symptom:** Live-Post auf Instagram zeigt NUR das rohe Hintergrundfoto. KEIN Headline, KEIN Logo, KEIN Save-Banner, KEIN Layout.
+
+**Root Cause:** Pipeline lädt rohe Background-Photos direkt zu Cloudinary hoch. Der Playwright-Render-Step (HTML-zu-PNG mit allen Text-Overlays) wurde nicht aufgerufen.
+
+**Pipeline-Korrektur:**
+```
+ALT (broken):
+  generate → background_images → Cloudinary → IG (nur Background-Photo postet)
+
+NEU (richtig):
+  generate → carousel.html (mit Text-Overlays in HTML)
+    → export_slides.py (Playwright Screenshots, alles eingebrannt)
+    → Cloudinary → IG (volles Carousel)
+```
+
+**Lesson für Guide:** NIEMALS rohe Hintergrund-Bilder direkt zu IG hochladen. HTML-Carousel MUSS via headless-Browser gerendert + screenshotted werden. Im aktuellen Setup macht das `generate_carousel.py::export_slides()` via Playwright — der MUSS in der Pipeline-Kette sein.
+
+### 39.5b 🔴 KRITISCHER BUG #45 — IG "Share to Facebook" Toggle funktioniert NICHT bei API-Posts
+
+**Symptom:** User aktiviert in IG-App "Auto-share to Facebook" / "Recommend on Facebook" via Account Center. Posts via API erscheinen trotzdem NICHT auf Facebook.
+
+**Root Cause:** Meta-Bug (offiziell bestätigt). Das Account-Center-Toggle "Share to Facebook" funktioniert nur bei MANUELLEN Posts in der IG-App, NICHT bei API-Posts (Graph API / Instagram Login API).
+
+**Fix:** Expliziter FB-Page-Post via `graph.facebook.com/v21.0/{page_id}/photos` + `/feed` mit `FB_PAGE_ACCESS_TOKEN`. Ist im aktuellen Code als `post_to_facebook()` implementiert in `post_from_queue.py` und `cloud_pipeline.py`. Wird aufgerufen NACH erfolgreichem IG-Post.
+
+**Pflicht-Secrets damit FB-Cross-Post läuft:**
+- `FB_PAGE_ACCESS_TOKEN` (aus `me/accounts` API-Call abgeleitet — siehe Sektion 38.7 Schritt 4)
+- `FB_PAGE_ID` (aus gleichem API-Call, `id` Feld)
+
+**Verifikation dass es funktioniert:**
+```
+[Post FB] Cross-Post zu Facebook...
+FB Status: fb_posted: 1234567890_123456789
+```
+
+Wenn `FB Status: skipped (FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN fehlt)` → Secrets nicht gesetzt.
+Wenn `FB Status: fb_error: ...` → Token-Permissions oder Page-Verknüpfung prüfen.
+
+**Lesson für Guide:** NIEMALS auf Account-Center-Toggle vertrauen für API-basiertes Cross-Posting. IMMER expliziten Graph-API-Call zur FB Page implementieren.
+
+---
+
+### 39.6 ⚙️ Setup & Tooling Bugs
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 9 | Replicate-SDK Python-3.14-inkompatibel | Pydantic V1 vs Python 3.14 | HTTP-Calls statt SDK |
+| 10 | f-string Backslash auf Py 3.11 | GitHub Actions verwendet 3.11 | Backslash in temp-Variable, dann f-string |
+| 11 | JSON-Parse-Errors Gemini | Unescaped quotes in Strings | `json-repair` Library als Fallback |
+
+### 39.7 🖼 Image-API Bugs
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 4 | Together AI: "height must be multiple of 16" | 1080 nicht durch 16 teilbar | width=1024, height=1280 (4:5) |
+| 5 | Together AI: "non-serverless model" | FLUX.1-schnell-Free umgezogen | FLUX.1-schnell (ohne -Free) |
+| 6 | Pexels/Pixabay 403 Forbidden | Custom User-Agent geblockt | Standard Chrome User-Agent |
+| 7 | Replicate 402 Payment Required | Account-Balance $0 | $5 aufladen ODER aus Chain entfernen |
+| 8 | Gemini 503 überlastet | Google-Server peaks | 8-Modell-Fallback-Chain + 02:30 CET runtime |
+
+**Gemini Fallback-Chain (PFLICHT):**
+```
+gemini-2.5-flash → gemini-2.5-flash-lite → gemini-2.5-pro
+→ gemini-2.0-flash → gemini-2.0-flash-exp
+→ gemini-1.5-flash → gemini-1.5-flash-8b → gemini-1.5-pro
+```
+
+**Pexels/Pixabay UA (PFLICHT):**
+```
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+```
+
+### 39.8 📱 Meta Graph API Bugs
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 17 | "Error validating client secret" | Instagram-App-Secret ≠ Meta-App-Secret | Meta-App-Secret aus App Settings → Basic |
+| 18 | Falsche Use-Case bei App-Erstellung | App Ads / WhatsApp / Threads gewählt | "Messaging und Content auf Instagram verwalten" |
+| 19 | Token im falschen Format (IGAA vs EAA) | IG-Login statt FB-Login API gewählt | "API-Einrichtung mit Facebook-Log..." wählen |
+| 20 | "Keine Pages mit IG-Verknüpfung" | Token ohne `instagram_basic` generiert | ALLE 5 Permissions ankreuzen |
+| 21 | 60-Tage-Token-Expiry-Sorge | User Token läuft ab | FB_PAGE_ACCESS_TOKEN benutzen — läuft NIE ab (siehe Sektion 38) |
+
+**Bei Token-Generieren PFLICHT-Permissions:**
+- `instagram_basic`
+- `instagram_content_publish`
+- `pages_show_list`
+- `pages_read_engagement`
+- `business_management`
+
+**Klar unterscheiden:**
+- **Meta-App-Geheimcode** → App Settings → Basic
+- **Instagram-App-Geheimcode** → Use Case → API Setup
+- Beide existieren, sehen ähnlich aus, sind ABER VERSCHIEDEN
+
+**Token-Format-Check:**
+- **EAA...** → Graph API (graph.facebook.com), mit FB-Page-Setup
+- **IGAA...** → Instagram Login API (graph.instagram.com), ohne FB-Page
+
+### 39.9 🔧 Cloudinary Bug
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 22 | "Invalid api_key" | Cloud_Name / API_Key / Secret im GitHub Secrets verwechselt | Strikt unterscheiden: |
+
+- `CLOUDINARY_CLOUD_NAME` = kurzer **Text** (z.B. `dzpo48ngf`)
+- `CLOUDINARY_API_KEY` = NUR **Zahlen** (z.B. `812416893654214`)
+- `CLOUDINARY_API_SECRET` = **Mix** aus Buchstaben+Zahlen
+
+### 39.10 🎨 Layout & Style Bugs
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 23 | `[GOLD]word[/GOLD]` zeigt sich roh | gold_marks() nur auf headline angewendet | Auf JEDEN Text-Field anwenden (body, subheadline, steps, tips) |
+| 24 | `[SECRET]` statt `[GOLD]SECRET[/GOLD]` | Gemini schreibt manchmal nur Brackets | gold_marks() permissiv: `[WORD]` + `**word**` auch akzeptieren |
+| 25 | Anton zu condensed/quetschig | Headlines unleserlich bei langem Text | Bebas Neue als Default + 1.5px letter-spacing |
+| 26 | Body-Text immer 13px (zu klein) | Statische Größe | Dynamic body-sizing: 22px-13px je nach Länge |
+| 27 | Foto-Fade zu hart | Gradient bei 50% direkt schwarz | Soft gradient: transparent 0-35%, fade bis 75% |
+| 28 | Slide 1 immer "man face close-up" | Gemini fällt auf erste Beispiel-Kategorie zurück | 10 Kategorien-Rotation Pflicht im Prompt (siehe Sektion 35.8) |
+| 29 | Frauen immer "Businesswoman close-up" | Zu enge Vorgabe | Gender + Topic-aware Variety pro Pillar (siehe Sektion 35.9) |
+| 30 | Topic-Bild-Mismatch (Snow für Business) | "Looks cinematic" wichtiger als "matches topic" | CRITICAL TOPIC-RELEVANCE RULE im Prompt |
+| 31 | Save-Banner zu prominent | Voll-breit gold | Rectangle, dark bg, subtle gold border |
+| 32 | CTA zwei-zeilig statt eins | Gemini interpretiert Zeilenumbrüche frei | Single-line erzwingen mit `&nbsp;` |
+| 33 | CTA-Profile-Pic war 🥷 Emoji | Brand-Icon nicht eingebunden | Brand-Icon als base64 in HTML |
+| 34 | SWIPE FOR MORE zu klein/dunkel | Default-Style zu subtle | 46px großer Glas-Effekt-Button mit SVG-Pfeil |
+| 35 | H2-Texte zu klein/groß flip-flop | Statische Größen pro Slide | Dynamisch +30%, +20% iterativ |
+| 36 | Body-Text zu nah am SWIPE FOR MORE | bottom: 54px | bottom: 90-100px für Atmungsraum |
+
+### 39.11 🚀 Posting & GitHub Actions Bugs
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 37 | Workflow generiert nichts wenn ein Bild fehlt | Hardcoded slide_count | Dynamic slide_count aus carousel.json |
+| 38 | post_carousel.py lädt rohe Background-Bilder | `images/` statt `slides/` | Posting greift auf `slides/` (gerendert) zu |
+| 42 | UTC vs CET-Verwechslung | GitHub Cron in UTC, User dachte CET | Im YAML beide Zeiten kommentieren |
+
+### 39.12 🌍 Audience & Content Bugs
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 39 | Tagline "for men" | Definition zu eng | "for those who refuse mediocrity" + Frauen ergänzen |
+| 40 | Brand-Name = Topic-Verwechslung | "Ronin Codex" → User dachte Samurai-Inhalte | Brand-Name vs Topic vs Visual klar trennen |
+| 41 | Engagement-CTAs nicht gut platziert | Nur am Ende | Mid-Engagement-Banner + Final-CTA-Slide |
+| 43 | Caption-CTA zu schwach | Nur generic Follow-Aufforderung | 4-Zeilen-CTA-Block: Save+Like+Share+Follow (siehe Sektion 37) |
+
+### 39.13 🚨 META-LESSONS — Process-Fehler die ich (Claude) gemacht hab
+
+**M1. Pipeline NIE End-to-End getestet, bevor weitergebaut wurde.** Generate, Render und Post als getrennte Schritte gebaut, ohne EIN MAL alles zusammen laufen zu lassen mit visuellem Output-Check.
+→ **Lesson:** Zuerst END-TO-END-Test mit echtem Output, DANN Features hinzufügen. Lokaler Manual-Test ist Pflicht vor jedem GitHub-Run. "müsste theoretisch funktionieren" zählt nicht.
+
+**M2. Style-Direction 4× geflippt** (Editorial → Vintage Etching → Photorealistic → Samurai → Topic-relevant).
+→ **Lesson:** Visual-Richtung am Anfang des Setups festnageln mit konkreten Reference-Bildern. Nie auf "ach das könnte auch so sein"-Pivots reagieren — erst NACH Setup-Lock optimieren.
+
+**M3. Zu viele Clarifying-Questions verpasst.** Direkt mit Code-Bauen losgelegt nach 1-2 Fragen.
+→ **Lesson:** Am Anfang 5-10 Min mit präzisen Setup-Fragen investieren (siehe 39.2). Spart später 5-10 Stunden Iterationen.
+
+**M4. Beim Code-Update Inkonsistenzen erzeugt.** Font-Size in Slide 2 geändert, vergaß Slide 3, 4, 7.
+→ **Lesson:** Multi-File / Multi-Slide-Updates IMMER mit Grep-Search nach allen Stellen, dann konsistent updaten.
+
+**M5. Example-File ignoriert das die Lösung war.** `example_carousel/export_slides.py` war von Anfang an im Repo — wurde ignoriert.
+→ **Lesson:** Example-Code ist Source-of-Truth. Bei jedem Pipeline-Schritt: Existiert ein Example? Wenn ja → integrieren, nicht ignorieren.
+
+**M6. User-Frustration ignoriert.** Mehrfach hat User gesagt "ich hab das schon gesagt", "wieso machst du das doppelt".
+→ **Lesson:** Wenn User Frustration zeigt → STOP, neu lesen, neu verstehen, dann erst Code. Nicht weiter "produktiv aussehen".
+
+**M7. Fehler-Diagnose ohne Logs.** Mehrmals Fixes deployed, OHNE auf die exakten Error-Logs zu warten.
+→ **Lesson:** Bei Fehlern ZUERST Logs lesen, dann fixen. Nie "wahrscheinlich ist es das" raten.
+
+**M8. Forever-Setup-Frage nicht früh gestellt.**
+→ **Lesson:** "Wie lange soll das laufen ohne Wartung?" als Setup-Frage. Determines token strategy, scheduler architecture, error-recovery.
+
+**M9. GitHub-Setup gestartet bevor lokal stable.** Code zu GitHub gepusht, GitHub Actions zeigt f-string-Backslash-Error den ich lokal nie gesehen hätte.
+→ **Lesson:** Lokal komplett grün = Voraussetzung für GitHub-Push. Inkl Python-Version-Match (lokal 3.14, prod 3.11).
+
+**M10. Layout-Polishing zu früh, Funktionalität zu spät.** Stunden in CSS-Feinheiten investiert bevor verifiziert war dass das Layout überhaupt richtig nach Instagram kommt.
+→ **Lesson:** Functional zuerst, polish zweitens.
+
+**M11. Overengineered Provider-Fallback bevor Single-Provider stabil.** 5-Provider-Chain gebaut bevor auch nur EINER konsistent funktionierte.
+→ **Lesson:** Erst 1 Provider stabil, DANN Fallbacks dazu. Nicht alle 5 gleichzeitig.
+
+**M12. Keine "Sanity Check"-Phase.** 50+ Iterations-Cycles weil keine Vor-Push-Verifikation.
+→ **Lesson:** 3-Punkt Sanity-Check vor jedem Push (siehe 39.3).
+
+### 39.14 📋 Komplette Process-Checklist für nächsten Brand-Setup
+
+**Vor Code-Schreiben:**
+- [ ] Visual-Direction mit 3-5 Reference-Bildern festnageln
+- [ ] Audience genau (Geschlecht, Alter, Sprache, Region)
+- [ ] Posting-Frequenz (1x/Tag? 2x?)
+- [ ] Auto-Post oder manuell
+- [ ] Wartungs-Toleranz (Forever-Run? Wöchentlicher Refresh OK?)
+- [ ] Topic-Pillars (3-5 konkret)
+- [ ] Slide-Count fix (8? 9? 10? oder dynamisch)
+- [ ] CTA-Style fix (mit Reference-Image)
+
+**Setup-Schritte:**
+- [ ] Python-Version checken (3.11 für GitHub Actions, 3.12+ lokal — Code muss 3.11-kompat sein)
+- [ ] requirements.txt mit `json-repair`, NICHT `replicate` (HTTP-only)
+- [ ] Together AI Modell ohne `-Free` Suffix
+- [ ] Pexels/Pixabay mit Standard Chrome User-Agent
+- [ ] Multi-Model Gemini Fallback-Chain (8 Modelle)
+- [ ] Multi-Provider Image Fallback (Gemini → Together → Replicate → Pexels → Pixabay) — aber NUR wenn 1 Provider 100% stabil
+- [ ] Meta App: Use-Case "Messaging und Content auf Instagram verwalten" + "Alles auf deiner Seite verwalten"
+- [ ] Beim Token-Generieren ALLE 5 Permissions
+- [ ] FB-Login-API-Pfad (`graph.facebook.com`), NICHT Instagram-Login-API
+- [ ] FB_PAGE_ACCESS_TOKEN als primary Token (forever-running, siehe Sektion 38)
+- [ ] Cloudinary Cloud Name / API Key / API Secret klar unterscheiden
+- [ ] Bebas Neue als Headline-Font, NICHT Anton
+- [ ] gold_marks() auf JEDEM Text-Field
+- [ ] Slide-1-Hook mit 10-Kategorien-Rotation (Sektion 35.8)
+- [ ] Topic-Relevance-Rule im Image-Prompt
+- [ ] Audience gender-inklusiv definieren
+- [ ] CTA-Slide 1:1 nach Reference-Image bauen
+- [ ] Save-Banner dezent unten, NICHT prominent oben
+- [ ] Engagement an 2 Punkten (mid + end)
+- [ ] GitHub Actions cron in UTC mit CET-Kommentar
+- [ ] Verify-Step nach Generation (Hard fail wenn <3 Bilder)
+- [ ] dots_row() dynamisch mit slide-count
+- [ ] Brand-Name vs Topic im Prompt klar trennen
+
+**Während Code-Schreiben:**
+- [ ] Multi-File-Updates IMMER mit Grep-Search verifizieren
+- [ ] Bei Style-Changes: alle Slides prüfen
+- [ ] Examples = Source-of-Truth, NICHT ignorieren
+- [ ] Lokal Python-Version matchen mit GitHub Actions Python-Version
+
+**Vor jedem Push / Deploy:**
+- [ ] Lokaler End-to-End-Test mit echtem Output
+- [ ] Visual-Verify: Sieht der finale Post wie das Reference-Image aus?
+- [ ] Logs lesen, nicht raten
+- [ ] Sanity-Check (3-Punkt aus 39.3)
+- [ ] Alle Stellen wo eine Sache gefixt wurde — auch andere ähnliche Stellen?
+
+### 39.15 🎯 Ergebnis bei richtiger Anwendung
+
+Mit dieser Checklist + dem Pipeline-Render-Fix (39.5) + den Process-Lessons (M1-M12):
+**Nächster Brand-Setup in <2 Stunden statt >30 Stunden.**
+
+---
+
 **Ende des Handover-Guides**. Bei Fragen: User direkt fragen, NICHT raten.
 
-**WICHTIG für neuen Claude**: 
+**WICHTIG für neuen Claude**:
+
+🚨 **ZUERST SEKTION 39 LESEN** — 44 Bugs aus dem Vorgänger-Build, jeder einzelne hat Stunden gekostet. Wenn du diese nicht kennst, wirst du sie wiederholen.
+ 
 - Lies diesen Guide KOMPLETT vor erster Aktion (besonders Sektion 31 — Fehler-Bibel!)
 - Frag den User die Punkte aus Sektion 8
 - Halte dich an Style-Bibel (Sektion 17 + 17.9 exakte Zahlen)
@@ -1875,3 +3114,11 @@ SYSTEM_PROMPT = """...existing...
 - HTML/CSS/Playwright-Setup 1:1 wie in Sektion 30 — keine Abweichungen
 - **Fehler-Bibel (Sektion 31) als Lookup nutzen** wenn was schiefgeht — niemals raten
 - **Hook-Regeln (Sektion 32) auf JEDEN Post anwenden** — schwacher Hook = Post stirbt
+- **List/Tips-Slides (Sektion 33) für actionable Topics** nutzen — nummerierte Tipps ohne Bilder
+- **Cron-Split (Sektion 34) verstehen** — Generation 02:00 UTC, Posting Peak-Zeit (siehe Tabelle 34.5)
+- **Posting-Zeit per Sprache/Region** wählen (Sektion 34.5) — DE != EU != USA != IN
+- **Adaptive Image-Logic (Sektion 35) bei NEUER Brand** — Mapping-Tabelle in slide_planner.py umschreiben
+- **Woman Variety (Sektion 35.9)** — Frauen-Aktivität an Topic anpassen, NIEMALS Default Businesswoman/Close-up
+- **Style-Bible (Sektion 36)** — alle Pixel/Fonts/CSS für H1/H2/Description/Logo/Vitals/Swipe/Outro/Profile-Card direkt zum Copy-paste
+- **Caption CTA (Sektion 37)** — JEDE Caption muss mit Save/Share/Follow/Don't-forget enden (bevor Hashtags)
+- **Forever-Token (Sektion 38)** — Auto-Refresh alle 50 Tage ODER FB Page Token (nie abläuft) — KEIN manueller Refresh mehr

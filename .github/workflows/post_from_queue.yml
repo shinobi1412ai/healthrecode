@@ -1,0 +1,74 @@
+name: Post from Queue (Engagement Peak)
+
+# Postet das ÄLTESTE vorgenerierten Carousel aus queue/ zu Instagram.
+# Läuft 2x täglich zur Engagement-Peak-Zeit der DE-Audience:
+#   08:00 UTC = 09:00 Uhr DE (Winter) / 10:00 Uhr DE (Sommer) — Morgen-Routine
+#   16:00 UTC = 17:00 Uhr DE (Winter) / 18:00 Uhr DE (Sommer) — Feierabend
+#
+# Nutzt vor-uploaded Cloudinary URLs aus queue/POST_*.json (siehe generate_carousels.yml).
+# KEINE Generation hier — nur API-Call zu IG. Sehr schnell (~1-2 Min).
+
+on:
+  workflow_dispatch:
+    inputs:
+      pick:
+        description: "Bestimmtes Queue-File posten (Name, z.B. POST_20260502_0200.json). Leer = ältestes."
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry-Run (zeigt nur was gepostet würde)"
+        type: boolean
+        default: false
+
+  schedule:
+    - cron: "0 8 * * *"   # 09/10 Uhr DE — Morgen-Post
+    - cron: "0 16 * * *"  # 17/18 Uhr DE — Abend-Post
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests python-dotenv
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          IG_USER_ACCESS_TOKEN=${{ secrets.IG_USER_ACCESS_TOKEN }}
+          FB_PAGE_ACCESS_TOKEN=${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
+          IG_USER_ID=${{ secrets.IG_USER_ID }}
+          EOF
+
+      - name: Post oldest queued carousel
+        env:
+          PICK: ${{ github.event.inputs.pick }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          ARGS=""
+          if [ -n "$PICK" ]; then ARGS="$ARGS --pick $PICK"; fi
+          if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python post_from_queue.py $ARGS
+
+      - name: Commit posted/ + queue/ changes
+        if: success()
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add queue/*.json posted/*.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Posted from queue $(date -u +%Y-%m-%d-%H%M)"
+          git push || true

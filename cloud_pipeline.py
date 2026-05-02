@@ -36,7 +36,8 @@ gc_source = (ROOT / "generate_carousel.py").read_text(encoding="utf-8")
 
 
 def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
-                 do_upload: bool = False, do_post: bool = False) -> dict:
+                 do_upload: bool = False, do_post: bool = False,
+                 save_to_queue: bool = False) -> dict:
     """Führt die komplette Pipeline für ein Topic aus.
 
     Returns dict mit Pfaden + Caption + Status.
@@ -92,12 +93,33 @@ def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
         cloudinary_urls = upload_to_cloudinary(timestamp)
         print(f"    OK — {len(cloudinary_urls)} URLs erhalten")
 
-    # 4. (Optional) Instagram Post
+    # 4a. (Optional) Save to queue für späteres Posten (Generation-only Mode)
+    queue_file = None
+    if save_to_queue and cloudinary_urls:
+        queue_dir = ROOT / "queue"
+        queue_dir.mkdir(exist_ok=True)
+        queue_file = queue_dir / f"POST_{timestamp}.json"
+        queue_data = {
+            "timestamp": timestamp,
+            "topic": topic,
+            "language": language,
+            "caption": plan["caption"],
+            "image_urls": cloudinary_urls,
+            "generated_at": datetime.now().isoformat(),
+        }
+        queue_file.write_text(json.dumps(queue_data, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"\n[4a] Queued für späteres Posten: {queue_file.name}")
+
+    # 4b. (Optional) Instagram Post (sofort)
     ig_status = "skipped"
+    fb_status = "skipped"
     if do_post and cloudinary_urls:
-        print("\n[4] Instagram Posting...")
+        print("\n[4b] Instagram Posting...")
         ig_status = post_to_instagram(cloudinary_urls, plan["caption"])
-        print(f"    Status: {ig_status}")
+        print(f"    IG Status: {ig_status}")
+        print("\n[4c] Facebook Cross-Post...")
+        fb_status = post_to_facebook(cloudinary_urls, plan["caption"])
+        print(f"    FB Status: {fb_status}")
 
     # 5. Summary speichern
     summary = {
@@ -108,6 +130,8 @@ def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
         "slide_count": len(plan["slides"]),
         "cloudinary_urls": cloudinary_urls,
         "instagram_status": ig_status,
+        "facebook_status": fb_status,
+        "queued_file": str(queue_file) if queue_file else None,
         "html_path": str(html_path),
         "plan_path": str(plan_path),
     }
@@ -136,6 +160,8 @@ def _normalize_slide(s: dict) -> dict:
         "show_logo_block": s.get("show_logo_block", True),
         "show_swipe_cta": s.get("show_swipe_cta", True),
         "engagement_text": s.get("engagement_text", ""),
+        "list_items": s.get("list_items"),
+        "solid_color": s.get("solid_color"),
     }
 
 
@@ -167,6 +193,38 @@ def upload_to_cloudinary(timestamp: str) -> list[str]:
         urls.append(result["secure_url"])
         print(f"  Uploaded {f.name}")
     return urls
+
+
+def post_to_facebook(image_urls: list, caption: str) -> str:
+    """Cross-Post: postet Carousel-Bilder als FB Photo-Album.
+    Nutzt FB_PAGE_ACCESS_TOKEN (laeuft NIE ab) + FB_PAGE_ID."""
+    page_id = os.environ.get("FB_PAGE_ID", "").strip()
+    page_token = os.environ.get("FB_PAGE_ACCESS_TOKEN", "").strip()
+    if not page_id or not page_token:
+        return "skipped (FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN fehlt)"
+    BASE = "https://graph.facebook.com/v21.0"
+    try:
+        photo_ids = []
+        for i, url in enumerate(image_urls):
+            r = requests.post(
+                f"{BASE}/{page_id}/photos",
+                params={"url": url, "published": "false", "access_token": page_token},
+                timeout=60,
+            )
+            if r.status_code != 200:
+                return f"fb_error: photo {i+1}: {r.status_code} {r.text[:200]}"
+            photo_ids.append(r.json()["id"])
+        attached = ",".join([f'{{"media_fbid":"{pid}"}}' for pid in photo_ids])
+        r = requests.post(
+            f"{BASE}/{page_id}/feed",
+            params={"message": caption, "attached_media": f"[{attached}]", "access_token": page_token},
+            timeout=60,
+        )
+        if r.status_code != 200:
+            return f"fb_error: publish: {r.status_code} {r.text[:200]}"
+        return f"fb_posted: {r.json().get('id')}"
+    except Exception as e:
+        return f"fb_error: {e}"
 
 
 def post_to_instagram(image_urls: list[str], caption: str) -> str:
@@ -253,6 +311,7 @@ def main():
     parser.add_argument("--backend", default="auto", choices=["auto", "gemini", "anthropic"])
     parser.add_argument("--upload", action="store_true", help="Zu Cloudinary hochladen")
     parser.add_argument("--post", action="store_true", help="Auf Instagram posten (braucht Meta-Setup)")
+    parser.add_argument("--save-to-queue", action="store_true", help="Statt sofort posten: Queue-File anlegen (für Cron-Posting später)")
     args = parser.parse_args()
 
     # Topic ermitteln
@@ -273,7 +332,7 @@ def main():
         print("FEHLER: Topic oder --from-queue benötigt.", file=sys.stderr)
         sys.exit(1)
 
-    summary = run_pipeline(topic, args.language, args.backend, args.upload, args.post)
+    summary = run_pipeline(topic, args.language, args.backend, args.upload, args.post, args.save_to_queue)
     print(f"\n=== FERTIG ===")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 

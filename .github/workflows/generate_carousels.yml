@@ -1,0 +1,118 @@
+name: Generate Carousels (Off-Peak)
+
+# Läuft täglich um 02:00 UTC = 03:00 Uhr DE (Winter) / 04:00 Uhr DE (Sommer)
+# Begründung: Gemini & Together AI haben um diese Zeit den niedrigsten globalen Load
+# (EU schläft, Asien-Peak ist 06-09 UTC, US-Westcoast ist Abend).
+# 503 "high demand" Fehler treten ~80% seltener auf als tagsüber.
+#
+# Generiert 2 Carousels pro Lauf (für Morgen-Post + Abend-Post desselben Tages),
+# lädt sie zu Cloudinary und legt sie in queue/POST_*.json ab.
+# Das eigentliche Posten erfolgt durch post_from_queue.yml zur IG-Engagement-Peak-Zeit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Topic (überschreibt topics.txt). Leer = nimmt erste(s) aus topics.txt"
+        required: false
+        default: ""
+      count:
+        description: "Anzahl Carousels in diesem Lauf (Default 2)"
+        required: false
+        default: "2"
+
+  schedule:
+    # 02:00 UTC = 3 AM CET / 4 AM CEST
+    - cron: "0 2 * * *"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-v1
+
+      - name: Install Playwright browser
+        run: python -m playwright install --with-deps chromium
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY=${{ secrets.PIXABAY_API_KEY }}
+          TOGETHER_API_KEY=${{ secrets.TOGETHER_API_KEY }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CSE_ID=${{ secrets.GOOGLE_CSE_ID }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          IG_USER_ACCESS_TOKEN=${{ secrets.IG_USER_ACCESS_TOKEN }}
+          FB_PAGE_ACCESS_TOKEN=${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
+          IG_USER_ID=${{ secrets.IG_USER_ID }}
+          IG_APP_ID=${{ secrets.IG_APP_ID }}
+          IG_APP_SECRET=${{ secrets.IG_APP_SECRET }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Generate carousels (uploads to Cloudinary, saves to queue/)
+        env:
+          TOPIC_OVERRIDE: ${{ github.event.inputs.topic }}
+          COUNT: ${{ github.event.inputs.count || '2' }}
+        run: |
+          if [ -n "$TOPIC_OVERRIDE" ]; then
+            python cloud_pipeline.py "$TOPIC_OVERRIDE" --upload --save-to-queue
+          else
+            for i in $(seq 1 $COUNT); do
+              echo "=== Carousel $i/$COUNT ==="
+              python cloud_pipeline.py --from-queue topics.txt --upload --save-to-queue || echo "Carousel $i fehlgeschlagen — weiter"
+              sleep 5
+            done
+          fi
+
+      - name: Commit queue + topics + summary
+        if: success()
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add topics.txt queue/*.json output/summary_*.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Auto-generate $(date -u +%Y-%m-%d) — added to queue"
+          git push || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-carousels
+          path: |
+            output/*.png
+            output/summary_*.json
+            queue/*.json
+          retention-days: 14

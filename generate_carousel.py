@@ -172,12 +172,12 @@ OUTRO_FINAL = {
         ("DROP A ", "bold"),
         ("🔥", "primary"),
     ],
-    # H2 — kleiner, 2 Zeilen mit explizitem Umbruch
+    # H2 — eine Zeile, breiter aufgebaut (Ronin-Style)
     "subhead_parts": [
-        ("IF YOU LEARNED<br>", "regular"),
+        ("IF YOU LEARNED ", "regular"),
         ("SOMETHING NEW!", "bold"),
     ],
-    # Description — dritte Ebene, noch kleiner
+    # Description — dritte Ebene, 2 saubere Zeilen mit explizitem Umbruch (Ronin-Style)
     "description_parts": [
         ("WHICH FACT ", "regular"),
         ("SHOCKED", "primary"),
@@ -185,21 +185,23 @@ OUTRO_FINAL = {
         ("COMMENTS", "bold"),
         (" 👇", "primary"),
     ],
-    # BIG Follow CTA — normal (nicht bold), 2-zeilig
+    # BIG Follow CTA — eine Zeile, breit (Ronin-Style)
     "big_follow_cta_parts": [
         ("FOLLOW ", "normal"),
         ("@HEALTHRECODE", "primary"),
-        ("<br>TO NOT MISS MORE!", "normal"),
+        (" TO NOT MISS MORE!", "normal"),
     ],
     "subline": "",
-    # Dunkler kosmischer Hintergrund via AI
+    # Health/Fitness Hintergrund: Athletic Silhouette mit starkem Black-Fade
     "ai_render": True,
     "ai_prompt": (
-        "Minimalist dark cosmic background, deep black with subtle white dust particles "
-        "and faint star specks, editorial moody atmosphere, cinematic lighting, "
-        "ultra clean aesthetic, suitable as text overlay background, 8k"
+        "Cinematic silhouette of athletic person at sunrise on running track, "
+        "deep teal and warm orange tones fading into pure black, "
+        "dramatic side-light, ultra dark moody atmosphere, "
+        "edges fade to pure black for text overlay, "
+        "fitness magazine cover aesthetic, 8k, ultra detailed"
     ),
-    "pexels_query": "dark cosmic stars black aesthetic minimalist",
+    "pexels_query": "athlete silhouette sunrise running fitness dark",
     "pexels_color": "black",
     "text_position": "top",
     "show_logo_block": False,
@@ -280,8 +282,10 @@ def fetch_pixabay_image(query: str, idx: int) -> Path:
 
 def fetch_pexels_image(query: str, idx: int, color: str = None) -> Path:
     """Sucht das beste Pexels-Foto für die Query und cached es lokal.
+    Pickt RANDOM aus den Top-15 Treffern (statt immer photos[0]) für Variety.
     Bei 0 Treffern → Fallback auf Pixabay → Fallback auf vereinfachte Query."""
     import hashlib
+    import random
     key = hashlib.md5(f"{query}|{color or ''}".encode()).hexdigest()[:10]
     cache = IMG_CACHE / f"slide_{idx}_{key}.jpg"
     if cache.exists() and cache.stat().st_size > 5000:
@@ -289,7 +293,7 @@ def fetch_pexels_image(query: str, idx: int, color: str = None) -> Path:
         return cache
 
     print(f"  [{idx}] Pexels search: '{query}' (color={color or 'any'})")
-    params = {"query": query, "per_page": 8, "orientation": "portrait"}
+    params = {"query": query, "per_page": 15, "orientation": "portrait"}
     if color:
         params["color"] = color
     r = requests.get(
@@ -332,9 +336,11 @@ def fetch_pexels_image(query: str, idx: int, color: str = None) -> Path:
     if not photos:
         raise RuntimeError(f"Keine Pexels-Treffer für '{query}'")
 
-    photo = photos[0]
+    # Random pick aus top-Treffern für Variety (statt immer [0])
+    pool = photos[:min(12, len(photos))]
+    photo = random.choice(pool)
     img_url = photo["src"].get("portrait") or photo["src"]["large"]
-    print(f"  [{idx}] Photographer: {photo.get('photographer')} → DL")
+    print(f"  [{idx}] Photographer: {photo.get('photographer')} (1/{len(pool)} pool) → DL")
     img_r = requests.get(img_url, timeout=60)
     img_r.raise_for_status()
     cache.write_bytes(img_r.content)
@@ -439,9 +445,12 @@ def fetch_google_image(query: str, idx: int) -> Path:
 
 def get_slide_image(slide: dict, idx: int) -> Path:
     """Wählt Bild-Quelle mit GRACEFUL FALLBACK:
+       - type="list" → automatisch dunkles Solid (kein Bild benötigt)
        - solid_color, local_bg, google_query → wie konfiguriert
        - ai_render / ai_prompt: Together AI FLUX (Fallback Pexels bei Fehler/NSFW)
        - sonst: Pexels (Standard für Lifestyle)"""
+    if slide.get("type") == "list" and not slide.get("solid_color"):
+        slide["solid_color"] = BRAND_BG_DARK
     if slide.get("solid_color"):
         from PIL import Image
         color_hex = slide["solid_color"].lstrip("#")
@@ -528,8 +537,8 @@ def calc_headline_size(parts):
 
 
 def calc_subhead_size(parts):
-    """Subhead ist immer ~60% der Hauptzeile."""
-    return max(14, int(calc_headline_size(parts) * 0.55))
+    """Subhead ist ~75% der Hauptzeile, plus 2px Bump (auf User-Wunsch)."""
+    return max(20, int(calc_headline_size(parts) * 0.75) + 2)
 
 
 # === SLIDE-HTML ===
@@ -540,14 +549,42 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
     show_swipe = slide.get("show_swipe_cta", True)
     engagement_text = slide.get("engagement_text", "")
     is_cta = slide["type"] == "cta"
+    is_list = slide["type"] == "list"
+    is_outro_final = slide["type"] == "outro_final"
     headline_size = calc_headline_size(slide["headline_parts"])
+    if is_list:
+        headline_size = min(headline_size, 30)
+    if is_outro_final:
+        headline_size = 32     # H1 "DROP A 🔥" — kleiner & kompakter (Ronin)
     subhead_html = ""
     if subhead_parts:
         subhead_size = calc_subhead_size(subhead_parts)
+        if is_outro_final:
+            subhead_size = 22     # H2 — kleiner als Standard
         subhead_html = (
             f'<h2 class="subhead" style="font-size:{subhead_size}px">'
             f'{render_headline(subhead_parts)}</h2>'
         )
+
+    # === LIST-ITEMS (Tips/Steps/Signs Slide) ===
+    list_items_html = ""
+    list_items = slide.get("list_items") or []
+    if list_items:
+        rows = []
+        for it in list_items:
+            num = it.get("number", "").strip()
+            title = it.get("title", "").strip()
+            desc = it.get("description", "").strip()
+            rows.append(
+                f'<div class="list-row">'
+                f'  <div class="list-num">{num}</div>'
+                f'  <div class="list-content">'
+                f'    <div class="list-title">{title}</div>'
+                f'    <div class="list-desc">{desc}</div>'
+                f'  </div>'
+                f'</div>'
+            )
+        list_items_html = f'<div class="list-items">{"".join(rows)}</div>'
 
     # Top-Left Logo entfernt — Brand erscheint nur im Bottom-Stack zwischen H1/Bild
     brand_logo_html = ""
@@ -567,8 +604,9 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
     # Description (dritte Text-Ebene zwischen H2 und Follow-CTA)
     description_html = ""
     if slide.get("description_parts"):
+        desc_class = "description outro-desc" if is_outro_final else "description"
         description_html = (
-            f'<div class="description">{render_headline(slide["description_parts"])}</div>'
+            f'<div class="{desc_class}">{render_headline(slide["description_parts"])}</div>'
         )
 
     # Follow-CTA: entweder klein (Standard) oder BIG mit mixed colors (für Outro)
@@ -583,7 +621,7 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
         )
 
     swipe_html = ""
-    if show_swipe and not is_cta:
+    if show_swipe and not is_cta and not is_list:
         swipe_html = """
         <div class="swipe-cta">
           <span>SWIPE FOR MORE</span>
@@ -605,7 +643,7 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
         """
 
     swipe_arrow_html = ""
-    if show_swipe and not is_cta:
+    if show_swipe and not is_cta and not is_list:
         swipe_arrow_html = """
         <div class="swipe-arrow-right">
           <svg viewBox="0 0 24 24" fill="none">
@@ -636,6 +674,72 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
     </div>
     """
 
+    # === RONIN-STYLE OUTRO (inline-HTML, kompakt, Bebas Neue) ===
+    if is_outro_final:
+        # Avatar (Health-Recode Icon als Fallback)
+        avatar_b64 = ""
+        avatar_path = ROOT / "healthrecodeicon.png"
+        if avatar_path.exists():
+            avatar_b64 = img_to_base64(avatar_path)
+        return f"""
+    <div class="slide" id="slide-{idx}">
+      <img class="bg-photo" src="{image_b64}" />
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,15,0.85) 0%,rgba(10,10,15,0.92) 60%,rgba(10,10,15,0.97) 100%);z-index:1;"></div>
+
+      {vitals_html}
+
+      <div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 28px 30px;">
+
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:34px;line-height:1;color:#fff;margin:0 0 14px;text-transform:uppercase;display:inline-flex;align-items:center;gap:10px;">
+          DROP A <span style="font-family:'Apple Color Emoji','Segoe UI Emoji',sans-serif;font-size:28px;">🔥</span>
+        </h1>
+
+        <p style="font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:20px;color:#fff;text-transform:uppercase;margin:0 0 16px;text-align:center;">
+          IF YOU LEARNED &nbsp; SOMETHING NEW!
+        </p>
+
+        <p style="font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:17px;color:#fff;text-transform:uppercase;margin:0 0 4px;text-align:center;">
+          WHICH FACT <span style="color:{BRAND_PRIMARY};">SHOCKED</span> YOU MOST?
+        </p>
+        <p style="font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:17px;color:#fff;text-transform:uppercase;margin:0 0 18px;text-align:center;">
+          TELL ME IN THE <span style="color:{BRAND_PRIMARY};">COMMENTS</span> 👇
+        </p>
+
+        <h2 style="font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1.5px;font-size:22px;color:#fff;text-transform:uppercase;line-height:1.05;margin:0 0 18px;text-align:center;white-space:nowrap;">
+          FOLLOW <span style="color:{BRAND_PRIMARY};">{BRAND_HANDLE.upper()}</span> TO NOT MISS MORE!
+        </h2>
+
+        <div style="width:96%;max-width:340px;border:1px solid {BRAND_PRIMARY};border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;text-align:left;background:rgba(0,0,0,0.5);">
+          <div style="width:62px;height:62px;border-radius:50%;flex-shrink:0;overflow:hidden;background:#0A0A0F;border:1.5px solid {BRAND_PRIMARY};">
+            <img src="{avatar_b64}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="avatar"/>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
+              <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;color:#fff;font-size:14px;">{BRAND_HANDLE.lstrip('@')}</span>
+              <span style="color:#999;font-size:12px;">⋯</span>
+            </div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:#fff;margin-bottom:5px;">
+              Health | Fitness | Medical | Mindset
+            </div>
+            <div style="display:flex;gap:11px;font-family:'Plus Jakarta Sans',sans-serif;font-size:10.5px;color:#fff;margin-bottom:5px;">
+              <span><b>98</b> Posts</span>
+              <span><b>610</b> Followers</span>
+              <span><b>572</b> Following</span>
+            </div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;color:#999;line-height:1.35;">
+              Recode your body. Transform your life. Daily science-backed health.
+            </div>
+          </div>
+        </div>
+
+        <p style="font-family:'Caveat',cursive;font-size:20px;color:rgba(255,255,255,0.9);margin:0;font-weight:600;">
+          Share this with your Friends →
+        </p>
+
+      </div>
+    </div>
+    """
+
     return f"""
     <div class="slide" id="slide-{idx}">
       <img class="bg-photo" src="{image_b64}" />
@@ -651,7 +755,7 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
       {swipe_arrow_html}
 
       <!-- Bottom-Stack: Logo-Block + H1 + (H2) + Follow-CTA — alle gruppiert -->
-      <div class="bottom-stack {('top-position' if slide.get('text_position') == 'top' else '')}">
+      <div class="bottom-stack {('top-position' if slide.get('text_position') == 'top' else '')} {('list-stack' if is_list else '')}">
         {('' if slide.get('show_logo_block') is False else f'''<div class="logo-block">
           <div class="logo-line left"></div>
           <span class="logo-text">{BRAND_WORD_LEFT}</span>
@@ -661,6 +765,7 @@ def slide_html(idx: int, slide: dict, total: int, image_b64: str, brand_logo_b64
         </div>''')}
         <h1 class="headline" style="font-size:{headline_size}px">{headline}</h1>
         {subhead_html}
+        {list_items_html}
         {description_html}
         {follow_cta_html}
         {engagement_html}
@@ -690,7 +795,7 @@ def build_html(slides_with_images):
 <title>Carousel Preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;600;700;800&family=Oswald:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@500;700&family=Inter:wght@300;400;600;700;800&family=Oswald:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
@@ -740,12 +845,13 @@ def build_html(slides_with_images):
     inset: 0;
     background: linear-gradient(
       180deg,
-      rgba(10,10,15,0.0) 0%,
-      rgba(10,10,15,0.0) 25%,
-      rgba(10,10,15,0.35) 40%,
-      rgba(10,10,15,0.75) 55%,
-      rgba(10,10,15,0.92) 70%,
-      rgba(10,10,15,0.98) 85%,
+      rgba(10,10,15,0.55) 0%,
+      rgba(10,10,15,0.30) 18%,
+      rgba(10,10,15,0.20) 30%,
+      rgba(10,10,15,0.45) 45%,
+      rgba(10,10,15,0.78) 60%,
+      rgba(10,10,15,0.94) 75%,
+      rgba(10,10,15,0.99) 90%,
       rgba(10,10,15,1.0) 100%
     );
   }}
@@ -773,11 +879,19 @@ def build_html(slides_with_images):
     bottom: auto;
     gap: 10px;
   }}
+  /* List-Slide: Stack füllt fast die ganze Slide (Logo + H1 oben, dann Liste) */
+  .bottom-stack.list-stack {{
+    top: 80px;
+    bottom: 70px;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0 28px;
+  }}
 
   /* Eingebettete Profile-Card unten auf finaler Outro-Slide */
   .profile-card-embed {{
     position: absolute;
-    bottom: 50px;
+    bottom: 70px;        /* mehr Abstand zu share-cta */
     left: 24px;
     right: 24px;
     z-index: 4;
@@ -791,19 +905,28 @@ def build_html(slides_with_images):
     display: block;
     object-fit: cover;
   }}
-  /* Share-CTA — "Share this with your Friends →" — ein bisschen höher von Insta-Dots weg */
+  /* Outro Description (kompakter) */
+  .description.outro-desc {{
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+    margin-top: 18px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.4px !important;
+  }}
+
+  /* Share-CTA — "Share this with your Friends →" — Script-Font wie Ronin */
   .share-cta {{
     position: absolute;
-    bottom: 32px;
+    bottom: 22px;       /* tiefer für mehr Abstand zur Profile-Card */
     left: 0;
     right: 0;
     z-index: 5;
     text-align: center;
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Caveat', 'Brush Script MT', cursive;
     font-weight: 500;
-    font-size: 13px;
+    font-size: 22px;
     color: rgba(255,255,255,0.95);
-    letter-spacing: 0.6px;
+    letter-spacing: 0.3px;
     text-shadow: 0 2px 6px rgba(0,0,0,0.30);
   }}
   .logo-block {{
@@ -860,13 +983,13 @@ def build_html(slides_with_images):
   }}
   .subhead {{
     font-family: 'Oswald', 'Anton', sans-serif;
-    font-weight: 600;
+    font-weight: 400;        /* nicht mehr default-bold (war 600) */
     text-transform: uppercase;
-    line-height: 1.05;
+    line-height: 1.18;
     letter-spacing: 0.3px;
     color: rgba(255,255,255,0.92);
     margin-bottom: 0;
-    margin-top: 2px;
+    margin-top: 14px;
     text-shadow: 0 2px 10px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.35);
     /* font-size wird per inline style gesetzt */
   }}
@@ -917,16 +1040,69 @@ def build_html(slides_with_images):
 
   .engagement-banner {{
     margin-top: 14px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: {BRAND_PRIMARY};
     color: black;
     font-family: 'Inter', sans-serif;
-    font-size: 10.5px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.5px;
     border-radius: 4px;
     text-align: center;
     text-transform: uppercase;
+  }}
+
+  /* === LIST-ITEMS (Tips/Steps/Signs Slide) === */
+  .list-items {{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 14px;
+    gap: 0;
+    text-align: left;
+  }}
+  .list-row {{
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.10);
+  }}
+  .list-row:first-child {{
+    border-top: none;
+  }}
+  .list-num {{
+    flex: 0 0 38px;
+    font-family: 'Oswald', 'Anton', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: {BRAND_PRIMARY};
+    line-height: 1;
+    letter-spacing: 0.5px;
+    padding-top: 1px;
+  }}
+  .list-content {{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }}
+  .list-title {{
+    font-family: 'Oswald', 'Anton', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    color: white;
+    line-height: 1.15;
+  }}
+  .list-desc {{
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 14.5px;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.78);
   }}
 
   .swipe-cta {{
@@ -942,7 +1118,7 @@ def build_html(slides_with_images):
   }}
   .swipe-cta span {{
     font-family: 'Inter', sans-serif;
-    font-size: 10px;
+    font-size: 13px;
     letter-spacing: 3px;
     color: rgba(255,255,255,0.85);
     font-weight: 600;
@@ -979,33 +1155,34 @@ def build_html(slides_with_images):
   /* Follow-CTA unter H1/H2 */
   .follow-cta {{
     font-family: 'Inter', sans-serif;
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-size: 9px;          /* 20% kleiner (war 11px) */
+    font-weight: 300;        /* dünn (war 600) */
+    letter-spacing: 1.4px;
     color: {BRAND_PRIMARY};
     text-transform: uppercase;
-    margin-top: 2px;
+    margin-top: 14px;        /* tiefer gerutscht (war 2px) */
   }}
   /* BIG Follow-CTA für Outro-Slide — nicht bold, mehrzeilig */
   .big-follow-cta {{
     font-family: 'Oswald', sans-serif;
     font-weight: 400;
     font-size: 22px;
-    line-height: 1.2;
+    line-height: 1.25;
     letter-spacing: 0.4px;
     text-transform: uppercase;
-    margin-top: 18px;
+    margin-top: 28px;
+    white-space: nowrap;
     text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40);
   }}
   /* Beschreibung — dritte Text-Ebene unter H2 */
   .description {{
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 15px;
-    line-height: 1.25;
-    letter-spacing: 0.2px;
+    font-size: 17px;
+    line-height: 1.4;
+    letter-spacing: 0.3px;
     text-transform: uppercase;
-    margin-top: 14px;
+    margin-top: 22px;
     text-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.30);
   }}
 
