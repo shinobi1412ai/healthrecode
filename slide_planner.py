@@ -378,7 +378,14 @@ def call_gemini(topic: str, language: str = "en", max_retries: int = 3) -> dict:
 
 
 def _parse_json(text: str) -> dict:
-    """Extrahiert JSON-Block (auch wenn von ```json ... ``` umschlossen)."""
+    """Extrahiert JSON-Block (auch wenn von ```json ... ``` umschlossen).
+
+    Robust gegen typische LLM-JSON-Bugs:
+    - Markdown fences (```json ... ```)
+    - Trailing commas vor } und ]
+    - Unescaped quotes in strings (via json-repair Fallback)
+    - Whitespace / kommentare am Anfang/Ende
+    """
     text = text.strip()
     # Markdown fences entfernen
     m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
@@ -390,7 +397,36 @@ def _parse_json(text: str) -> dict:
         e = text.rfind("}")
         if s >= 0 and e > s:
             text = text[s : e + 1]
-    return json.loads(text)
+
+    # Versuch 1: strikt
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e1:
+        pass
+
+    # Versuch 2: trailing commas entfernen (häufigster Gemini-Bug)
+    cleaned = re.sub(r",(\s*[}\]])", r"\1", text)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Versuch 3: json-repair Library (heilt unescaped quotes etc.)
+    try:
+        from json_repair import repair_json
+        repaired = repair_json(text)
+        return json.loads(repaired)
+    except ImportError:
+        print("  WARN: json-repair nicht installiert (pip install json-repair) — überspringe", file=sys.stderr)
+    except Exception as e:
+        print(f"  json-repair konnte nicht heilen: {e}", file=sys.stderr)
+
+    # Letzter Versuch: gib den Original-Fehler zurück mit Kontext
+    snippet = text[max(0, len(text)//2 - 100):len(text)//2 + 100]
+    raise json.JSONDecodeError(
+        f"JSON-Parse fehlgeschlagen nach 3 Versuchen. Snippet: ...{snippet}...",
+        text, 0
+    )
 
 
 def plan_slides(topic: str, language: str = "en", backend: str = "auto") -> dict:
