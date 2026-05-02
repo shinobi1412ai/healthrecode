@@ -450,4 +450,1428 @@ Aus Cindi's Prompt direkt übernommen:
 
 ---
 
+---
+
+## 17. STYLE BIBLE — Exakte visuelle Spezifikation (Pflicht-Look)
+
+**JEDER Slide muss diesen Look haben.** Inspiriert von @mentality_facts, @explaining.medicals, @genuinely.healthy.
+
+### 17.1 Layout-Komponenten von oben nach unten:
+
+```
+┌───────────────────────────────────────────┐
+│  [Vital-Signs Strip oben rechts]          │ ← Top 4-8% (HR ✱ SpO₂ ✱ T)
+│                                           │
+│                                           │
+│                                           │
+│       [Foto-Hintergrund — full-bleed]    │ ← Top 0-55%
+│       (Pexels/AI, EmotionsHook)           │
+│                                           │
+│       [optional: Kreis-Inset oben rechts] │ ← optional, runder Frame
+│                                           │
+│  ─────  HEALTH 🌿 RECODE  ─────           │ ← Logo-Block ~55%
+│                                           │
+│  HEADLINE H1 (Bold/Regular Mix)           │ ← H1 ~60%
+│  Subhead H2 (kleiner, mit cyan Keywords)  │ ← H2 ~70%
+│  Description (kleinster Text)             │ ← optional
+│                                           │
+│  FOLLOW @HEALTHRECODE TO NOT MISS MORE    │ ← Follow-CTA cyan
+│                                           │
+│         SWIPE FOR MORE  >                 │ ← Bottom 92%
+└───────────────────────────────────────────┘
+```
+
+### 17.2 Konkrete CSS-Werte (PFLICHT — nicht überschreiben!)
+
+```css
+/* Vital-Signs oben rechts */
+.vitals-strip { top: 14px; right: 14px; padding: 3px 8px;
+  background: rgba(0,0,0,0.18); backdrop-filter: blur(4px);
+  font-family: 'JetBrains Mono'; font-size: 7.5px;
+  color: rgba(255,255,255,0.55); }
+.vitals-strip .value { color: rgba(0,207,232,0.75); font-weight: 700; }
+.vitals-strip .pulse-dot { 4×4px circle, brand-cyan, glow }
+
+/* Bottom-Stack mit Logo + Headlines */
+.bottom-stack { position: absolute; bottom: 70px; top: 55%;
+  display: flex; flex-direction: column; gap: 6px;
+  text-align: center; padding: 0 24px; }
+
+/* Logo-Block: ─── HEALTH (icon) RECODE ─── */
+.logo-block { gap: 5px; }
+.logo-line { 70px wide, 1px height, gradient cyan }
+.logo-text { Inter 600, 11px, 2.5px letter-spacing, weiß }
+.logo-center-icon { 16×16px contain }
+
+/* Headline Auto-Sized (15% kleiner als brutaler default) */
+.headline { Oswald 700, line-height 1.0, letter-spacing 0.3px,
+  text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40);
+  font-size auto: 39 (kurz) → 17 (sehr lang) }
+
+/* Subhead — Oswald 600, kleiner */
+.subhead { font-weight 600, line-height 1.05,
+  color rgba(255,255,255,0.92), shadow stark }
+
+/* Follow-CTA dezent unter Headlines */
+.follow-cta { Inter 600, 8px, 1px letter-spacing, brand-cyan,
+  margin-top 2px }
+
+/* Swipe-CTA ganz unten (mit > Pfeil!) */
+.swipe-cta { bottom: 30px, gap 6px text + chevron-svg-mini }
+.swipe-arrow-mini { 11×11px chevron, rgba(255,255,255,0.85) }
+
+/* Right-Edge Swipe-Pfeil-Pill (auf jeder Slide außer letzter) */
+.swipe-arrow-right { 28×28px circle, rgba(255,255,255,0.18),
+  backdrop-filter blur(4px), chevron weiß, rechts mittig }
+
+/* Background-Gradient — STARK von unten nach oben */
+.bg-gradient { linear-gradient 180deg:
+  0% transparent → 25% transparent →
+  40% rgba(10,10,15,0.35) → 55% 0.75 → 70% 0.92 →
+  85% 0.98 → 100% 1.0 }
+```
+
+### 17.3 Typography-Hierarchie (Pflicht)
+
+| Element | Font | Weight | Size | Color |
+|---------|------|--------|------|-------|
+| Vital-Strip | JetBrains Mono | 400/700 | 7.5px | white-55%, primary-75% values |
+| Logo-Text | Inter | 600 | 11px | white |
+| H1 Headline | Oswald | 700 | auto 17-39px | white + primary keywords |
+| H2 Subhead | Oswald | 600 | ~60% of H1 | white-92% + primary keywords |
+| Description | Oswald | 600 | 15px | white |
+| Follow-CTA | Inter | 600 | 8px | primary cyan |
+| Swipe-CTA | Inter | 600 | 10px | white-85% |
+| Big Follow CTA (Outro) | Oswald | 400 | 22px | mixed white + primary |
+| Share-CTA (Outro) | Oswald | 500 | 13px | white-95% |
+
+### 17.4 Bold/Regular/Primary Mix-Regel (mentality_facts inspired)
+
+In jeder Headline/Subhead-Zeile:
+- **Verbindungswörter** ("the", "is", "and", "your", "in", "of") → `regular` (font-weight: 300, light)
+- **Keywords / Aktionen** → `bold` (font-weight: 700, weiß)
+- **Topic-Hauptbegriffe / Zahlen** → `primary` (cyan, weight: 700)
+- **Default** → `white` (weiß bold)
+
+Beispiel-Zeile:
+```python
+("AT HOUR 12, ", "regular"),   # dünn
+("KETOSIS", "primary"),          # cyan bold
+(" BEGINS — YOUR BODY ", "regular"),  # dünn
+("EATS ITS OWN FAT", "bold"),    # weiß bold
+```
+
+### 17.5 Image-Regeln (Pflicht!)
+
+**Hero-Slide MUSS visuelle Emotion zeigen**:
+- ✅ Person in Topic-relevanter Aktion (laufend, schlafend, an Brust greifend)
+- ✅ Hyperrealistic AI-Render der Topic-Anatomie (Herz, Hirn, Zellen)
+- ❌ NIE generisches "person meditating", "sunset silhouette", "calm woman"
+
+**Anatomie-Slides → IMMER `ai_render: true`**:
+- Pexels hat KEINE guten Anatomie-Renders
+- AI-Prompt MUSS spezifisch sein: "Photorealistic 3D render of human heart muscle, anatomically accurate, dramatic studio lighting, deep red tones, medical textbook quality, 8k"
+
+**Lifestyle-Slides → Pexels mit konkreter Szene**:
+- ✅ "young woman holding stomach in pain"
+- ✅ "man drinking water at sunrise"
+- ❌ "energy concept", "metabolism vitality", "depletion mood"
+
+### 17.6 Engagement-Elemente (auf JEDEM Slide außer letzter)
+
+1. **SWIPE FOR MORE >** Text + chevron unten zentriert
+2. **Right-edge Pfeil-Pill** mittig rechts (außer letzter Slide)
+3. **Vital-Signs Strip** oben rechts (gibt Glaubwürdigkeit als "Medical Monitor")
+4. **FOLLOW @HEALTHRECODE...** über dem Swipe-CTA
+
+### 17.7 Outro-Slide (letzte Slide) — Spezialregeln
+
+- KEIN Foto-Hintergrund — sondern AI-Render "dark cosmic minimalist" oder schwarz
+- KEIN Vital-Strip rechts (oder dezent)
+- KEIN Right-edge Pfeil
+- KEIN "SWIPE FOR MORE" — stattdessen "Share this with your Friends →"
+- Logo-Block AUSGEBLENDET (nur die Engagement-Hierarchie)
+- 4 Text-Ebenen: H1 (DROP A 🔥), H2 (IF YOU LEARNED / SOMETHING NEW!), Description (WHICH FACT SHOCKED YOU MOST?), Big Follow CTA
+- **Profile-Card** (`healthrecodefollow.jpg`) als embedded Box mit Cyan-Border
+- Position: alles oben (top: 40px), Profile-Card unten
+
+### 17.8 Brand-Color-Treatment (cyan @ Health Recode)
+
+- Primary: `#00CFE8` (Cyan)
+- Niemals zu viele cyan Wörter pro Headline (max 1-2 Keywords)
+- Cyan sollte AUFFALLEN, nicht dominieren
+- Bei dunklem Hintergrund: cyan glüht
+- Bei hellem Hintergrund: stark abdunkeln den BG (gradient)
+
+### 17.9 EXAKTE ZAHLEN-REFERENZ (alle px/%/% Werte zentral)
+
+#### Slide-Layout
+| Wert | Pixel/Prozent |
+|------|---------------|
+| HTML-Render-Width | `420px` (interner Layout) |
+| HTML-Render-Height | `525px` (4:5 ratio) |
+| Export-Output-Width | `1080px` |
+| Export-Output-Height | `1350px` |
+| Device-Scale-Factor | `2.5714` (1080/420) |
+| Slide-Padding-X | `0 24px` (default) |
+
+#### Background-Gradient (exakte Stops!)
+```css
+.bg-gradient {
+  background: linear-gradient(
+    180deg,
+    rgba(10,10,15,0.0)  0%,    /* oben transparent */
+    rgba(10,10,15,0.0)  25%,   /* bleibt klar bis 25% */
+    rgba(10,10,15,0.35) 40%,   /* ab 40% leicht abdunkeln */
+    rgba(10,10,15,0.75) 55%,   /* mitte stark dunkel */
+    rgba(10,10,15,0.92) 70%,   /* fast voll dunkel */
+    rgba(10,10,15,0.98) 85%,   /* near-black */
+    rgba(10,10,15,1.0)  100%   /* unten 100% schwarz */
+  );
+}
+```
+- **Photo bleibt klar** in oberen 25% des Slides
+- **Fade beginnt bei 40%** vom oberen Rand
+- **Texte ab 55-70%** liegen auf dunklem Bereich → max Lesbarkeit
+- **WICHTIG**: nie unter 0.92 in den unteren 30% — sonst Texte zu schwach lesbar
+
+#### Element-Positionen (exakte Pixel von oben/unten)
+| Element | Position |
+|---------|----------|
+| Vital-Strip | `top: 14px; right: 14px` |
+| Logo-Block (im Bottom-Stack) | `bottom: 70px; top: 55%` (Bottom-Stack Container) |
+| Bottom-Stack `gap` zwischen Items | `6px` |
+| Right-Edge Swipe-Arrow | `right: 12px; top: 50%; transform: translateY(-50%)` |
+| Swipe-CTA | `bottom: 30px` (zentriert) |
+| Profile-Card (Outro) | `bottom: 50px; left: 24px; right: 24px` |
+| Share-CTA | `bottom: 32px` (zentriert) |
+
+#### Element-Größen
+| Element | Pixel |
+|---------|-------|
+| Vital-Strip Padding | `3px 8px` |
+| Vital-Strip Pulse-Dot | `4×4px` (`box-shadow: 0 0 4px primary`) |
+| Logo-Block Gap | `5px` (zwischen den Wörtern + Icon) |
+| Logo-Line | `flex: 0 0 70px; height: 1px` |
+| Logo-Center-Icon | `16×16px` |
+| Right-Edge Swipe-Arrow | `28×28px` (Circle, blur 4px BG) |
+| Swipe-Arrow-Mini (chevron) | `11×11px` |
+| Profile-Card Border | `1.5px solid rgba(0,207,232,0.55)` |
+
+#### Text-Shadow Werte (kritisch für Lesbarkeit)
+| Element | Shadow |
+|---------|--------|
+| Headline H1 | `0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40)` |
+| Subhead H2 | `0 2px 10px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.35)` |
+| Description | `0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.30)` |
+| Big Follow CTA | `0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40)` |
+| Share-CTA | `0 2px 6px rgba(0,0,0,0.30)` |
+
+#### Auto-Headline-Size (calc_headline_size)
+| Total Zeichen | Font-Size |
+|---------------|-----------|
+| < 25 | **39px** (1-3 Wörter) |
+| < 40 | **34px** (kurz) |
+| < 55 | **30px** (mittel-kurz) |
+| < 75 | **26px** (mittel) |
+| < 100 | **22px** (lang) |
+| < 130 | **20px** (sehr lang) |
+| ≥ 130 | **17px** (extra lang) |
+
+#### Subhead-Size = ~60% der Headline-Size
+```python
+subhead_size = max(14, int(headline_size * 0.55))
+```
+
+#### Color-Tokens (Health Recode)
+```python
+BRAND_PRIMARY = "#00CFE8"        # Cyan
+BRAND_LIGHT_TINT = "#FAF6F2"     # warm cream
+BRAND_DARK_TINT = "#1A1918"      # near-black warm
+WHITE_92 = "rgba(255,255,255,0.92)"   # für regular subhead
+WHITE_55 = "rgba(255,255,255,0.55)"   # für vitals labels
+WHITE_35 = "rgba(255,255,255,0.35)"   # für vitals dividers
+PRIMARY_75 = "rgba(0,207,232,0.75)"   # für vitals values
+```
+
+#### Font-Weight Mapping (in render_headline)
+```python
+"primary" → font-weight: 700, color: BRAND_PRIMARY
+"bold"    → font-weight: 700, color: white
+"regular" → font-weight: 300, color: rgba(255,255,255,0.92)
+"normal"  → font-weight: 400, color: white
+"white"   → font-weight: 700, color: white  (default)
+```
+
+#### Slide-Count-Range
+| Topic-Tiefe | Content-Slides | Total (mit Outro) |
+|-------------|----------------|-------------------|
+| Quick fact | 3-4 | 4-5 |
+| Standard explainer | 5-7 | 6-8 |
+| Deep dive | 8-15 | 9-16 |
+
+#### Cron-Schedule (.github/workflows/daily_post.yml)
+```yaml
+schedule:
+  - cron: "0 9 * * *"     # 09:00 UTC = 10/11 DE
+  - cron: "0 17 * * *"    # 17:00 UTC = 18/19 DE
+```
+
+#### Topic-Refresh-Threshold
+- **<10 Topics** in topics.txt → Auto-Refresh via Gemini
+- **+50 neue** werden generiert und angehängt
+- Alte Topics bleiben auskommentiert (für History)
+
+---
+
+---
+
+## 18. Token-Lifecycle (KRITISCH — sonst stoppt die Pipeline nach 60 Tagen!)
+
+### 18.1 Instagram Access Token (IGAA...) — läuft nach 60 Tagen ab
+- Wird automatisch refreshed durch Aufruf von `verify_instagram.py` (call to `/access_token` mit `grant_type=ig_refresh_token`)
+- **Lösung 1 (manuell)**: Alle 50-58 Tage `verify_instagram.py` lokal laufen lassen → kopiert neuen Token in .env, dann GitHub Secret updaten
+- **Lösung 2 (automatisch)**: Build a `refresh_token.py` Workflow der monatlich via GitHub Actions läuft + Secret per API updated (komplexer, später)
+- **Erkennung**: Wenn `Status: error: ... access_token invalid` in den Logs erscheint → Token abgelaufen
+
+### 18.2 GitHub Personal Access Token
+- Wenn `expiration: No expiration` gewählt → läuft nicht ab
+- Sonst: alle 30/60/90 Tage neu generieren
+- Im Repo Remote-URL ersetzen: `git remote set-url origin https://USER:NEW_TOKEN@github.com/...`
+
+### 18.3 Andere API-Keys (statisch, kein Refresh nötig)
+- Pexels, Pixabay, Together AI, Gemini, Cloudinary, Google CSE — laufen NICHT ab
+- Können bei Verlust/Leak rotiert werden im jeweiligen Dashboard
+
+---
+
+## 19. Caption-Format & Hashtag-Strategie
+
+Gemini generiert Captions automatisch nach folgendem Schema (im System-Prompt von slide_planner.py):
+- **200-400 Wörter** Story/Erklärung
+- **3-5 Faktencluster** im Body
+- **5 Emojis** zur Auflockerung (📌 🔬 💡 🧠 ✅ etc.)
+- **8 Hashtags** am Ende (Mix aus Topic + Category + Brand + Generic)
+
+Beispiel:
+```
+Ever wondered what truly happens inside your body during an extended fast? 🤔
+
+The 72-hour fast is a powerful metabolic intervention...
+
+[200 words narrative + science]
+
+#FastingBenefits #72HourFast #Autophagy #MetabolicHealth
+#HealthRecode #ExtendedFasting #CellularRepair #Ketosis
+```
+
+**Best practices**:
+- Hashtags **am Ende** (nicht im Body)
+- 5-10 Hashtags reicht (mehr wird vom Algo abgewertet)
+- **Erste 125 Zeichen** sind kritisch (preview im Feed) → starker Hook
+- Keine Health-Claims die als "medizinische Beratung" durchgehen könnten (FTC/Meta Guidelines)
+
+---
+
+## 20. Failure Recovery & Monitoring
+
+### 20.1 Was kann schiefgehen
+1. **Gemini 503** → Retry Logic (3× exponential backoff) → fallback Anthropic Haiku
+2. **Pexels 0 Treffer** → Pixabay Fallback → vereinfachte Query
+3. **Together AI NSFW false-positive** → fallback Pexels
+4. **Cloudinary upload fail** → Pipeline stoppt, kein Post
+5. **IG Token expired** → Status "error: invalid token", kein Post
+6. **Google CSE billing fehlt** → optionale Permission, Fallback ist Pexels
+7. **Carousel-Container "ERROR" Status bei Publish** → IG hat Bild abgelehnt (zu groß, falsches Format)
+
+### 20.2 Monitoring
+- **GitHub Actions History**: https://github.com/<repo>/actions
+- **Logs aufrufen**: Failed Run → Job → expand jeden Step
+- **Email-Alerts**: aktivierbar in Repo Settings → Notifications → "Failed Workflows"
+
+### 20.3 Manuelle Recovery
+- Failed Run → "Re-run jobs" (für temporäre API-Fehler) — ABER: nimmt alten Commit, nicht latest!
+- Nach Code-Änderung: Always **"Run workflow"** (neuer Run mit aktuellem Code)
+- Bei IG-Token-Expiry: neu generieren via Graph API Explorer → Secret updaten
+
+---
+
+## 21. First-Post Checklist (vor erstem Live-Post)
+
+Bevor du dry_run=false aktivierst, prüfe:
+
+- [ ] `.env` lokal komplett (alle 13 Werte)
+- [ ] Alle Werte als GitHub Secrets eingetragen
+- [ ] Logo + Icon + Profile-Card im Repo (push erfolgreich)
+- [ ] `BRAND_NAME`, `BRAND_HANDLE`, `BRAND_PRIMARY` im Code aktualisiert
+- [ ] Mindestens 3 Test-Topics in `topics.txt`
+- [ ] Erster Run als Dry-Run = true → Slides als Artifact prüfen
+- [ ] Slides visuell akzeptabel (Layout, Lesbarkeit, Bild-Match)
+- [ ] Caption gelesen (Tonalität, Hashtags, Länge)
+- [ ] Instagram-Account hat:
+  - [ ] Business/Creator Status
+  - [ ] Verknüpfte FB-Page
+  - [ ] App als Instagram-Tester registriert
+  - [ ] Tester-Einladung angenommen
+- [ ] Cloudinary Master-Admin-Permissions gesetzt
+- [ ] Falls Cross-Post zu FB gewünscht: Account Center IG↔FB Page verknüpft
+
+Erst wenn alle ✅ → dry_run = false → Live-Post.
+
+---
+
+## 22. Multi-Account-Scaling
+
+Wenn du mehrere IG-Seiten betreust (Health Recode + andere Brand):
+
+### 22.1 Repo-Strategie
+**Option A: Separate Repos** (empfohlen für Setup-Klarheit)
+- Pro Brand ein Fork dieses Repos
+- Eigene topics.txt, eigene Brand-Config, eigene Secrets
+- Eigener Cron-Schedule
+
+**Option B: Multi-Brand im selben Repo**
+- Branches pro Brand: `main` = Health Recode, `mindrecode` = Mind Recode
+- Workflow-Files pro Branch
+- Secrets pro Branch (mehr Verwaltungsaufwand)
+
+### 22.2 Wiederverwendbare Keys
+Diese können brand-übergreifend genutzt werden:
+- Pexels, Pixabay, Together AI, Gemini, Google CSE → 1 Account reicht für alle
+- Cloudinary → 1 Account, separate Folders pro Brand
+
+### 22.3 Brand-spezifisch (neu pro Account)
+- Eigene FB-Page
+- Eigener IG_USER_ACCESS_TOKEN
+- Eigener IG_USER_ID
+- Optional: separate Meta Dev App (sonst kann eine App mehrere IGs verwalten)
+- Eigene Brand-Color, Logo, Profile-Card
+
+---
+
+## 23. Topic-Guidelines (was funktioniert, was nicht)
+
+### 23.1 GUTE Topics (hoher Engagement-Score)
+- Konkrete Studien mit Zahlen ("120 Frauen", "8 Wochen", "99%")
+- Skurrile/überraschende Fakten ("81 Zähne", "Mütter-Zellen bleiben")
+- Anatomie mit Aha-Effekt ("warum Frauen-Gehirn schrumpft")
+- Schritt-für-Schritt Mechanismen ("was passiert nach Stunde X")
+- Bekannte Conditions mit neuer Perspektive ("Diabetes ist reversibel")
+
+### 23.2 SCHLECHTE Topics (vermeiden)
+- Vage Lifestyle-Tipps ohne Wissenschaft ("trink mehr Wasser")
+- Politik / kontroverse Themen
+- Promi-Klatsch ohne medizinischen Anker
+- Werbung für spezifische Marken/Produkte
+- Gefährliche Behauptungen ("X heilt Krebs") → Meta sperrt
+- Mental-Health-Krisen-Inhalte (Suizid, Selbstverletzung) → strikte IG-Regeln
+
+### 23.3 IG-Banned-List (auto-blocken in Topics-Generator)
+Wörter/Themen die IG flaggen kann:
+- explizite Krankheits-Heilungs-Versprechen
+- Diet-Pills / Supplement-Hype
+- "Mirale Cures", "Big Pharma Lies"
+- Skin-bleaching
+- COVID/Vaccine-conspiracy
+- Eating-Disorder-Triggerwörter
+
+→ slide_planner.py System-Prompt erwähnt: "stay strictly medical/health/anatomy" → Gemini hält sich daran.
+
+---
+
+## 24. Performance & Optimization (späterer Ausbau)
+
+### 24.1 Was tracken
+- IG Insights pro Post (nach 7-14 Tagen): Likes, Comments, Saves, Reach, Impressions
+- Welche Topics performen am besten?
+- Welche Bild-Style (AI vs Pexels) bringt mehr Engagement?
+
+### 24.2 Auto-Remix erfolgreicher Posts
+Geplant (siehe `project_remix_feature.md` in Memory):
+- Top 25% performende Posts → automatisch nach 14 Tagen remixen
+- Gleiches Topic, andere Bilder, leicht abgewandelte Headlines
+- A/B-Test welche Variante besser performt
+
+### 24.3 Image-Cache Cleanup
+`image_cache/` Folder wächst über Zeit. Empfohlen:
+- Alle 30 Tage: `rm -rf image_cache/*` (forces fresh fetches)
+- Oder: GitHub Action Cleanup-Job einbauen
+
+---
+
+## 25. Local Development Setup (Testen vor Push)
+
+```bash
+# Erstmaliges Setup
+cd <repo>
+pip install -r requirements.txt
+python -m playwright install chromium
+
+# Lokal komplett laufen lassen (NICHT posten)
+python cloud_pipeline.py "Test Topic" --upload   # nur Cloudinary
+python cloud_pipeline.py "Test Topic" --upload --post  # auch IG (live!)
+
+# Nur 1 Slide rendern für Layout-Test
+python generate_carousel.py --only 1
+
+# Topic-Plan ohne Carousel anzeigen
+python slide_planner.py "Vitamin D deficiency" --out plan.json
+
+# Topics-Refresh manuell triggern
+python topic_refresher.py --force
+
+# Verify-Skripte
+python verify_pexels.py
+python verify_instagram.py
+python verify_cloudinary.py
+```
+
+---
+
+---
+
+## 26. ⚠️ API-Versions WICHTIG! (2024+ Instagram API vs 2018 Meta Graph API)
+
+**Es gibt 2 unterschiedliche Wege Instagram-Posts zu automatisieren. NIEMALS den alten 2018er Weg verwenden!**
+
+### 26.1 Vergleich der zwei API-Wege:
+
+| Aspekt | ❌ ALT: Meta Graph API (2018-2023) | ✅ NEU: Instagram Login API (2024+) |
+|--------|----------------------------|--------------------------|
+| Endpoint | `graph.facebook.com/v21.0/{ig-business-id}/...` | `graph.instagram.com/v22.0/{ig-user-id}/...` |
+| Token Format | `EAAxxx...` (FB Long-lived) | `IGAAxxx...` (IG direkt) |
+| Token-Quelle | Graph API Explorer (FB-Login + Page-Access) | Instagram Login Flow (direkt vom IG-Account) |
+| App-Setup | Meta Dev App + Facebook-Page-Verknüpfung + viele Permissions | Instagram-API Use-Case + Tester-Invite |
+| Permissions nötig | `instagram_basic`, `instagram_content_publish`, `pages_*` | `instagram_business_basic`, `instagram_content_publish` |
+| Tech-Provider-Status nötig? | Oft ja (für `instagram_content_publish`) | Nein für eigenes Konto in Dev-Mode |
+| FB-Page-Verknüpfung | Pflicht | Praktisch nicht nötig (nur für Cross-Posting) |
+| App Review nötig? | Ja für Production | Nein für eigenes Konto (Dev-Mode reicht) |
+| Token-Lebensdauer | 60 Tage refreshable | 60 Tage refreshable |
+| Setup-Zeit | 1-3 Stunden + Wartezeit auf Tech-Provider-Approval | 30 Min |
+
+### 26.2 ⚠️ KRITISCH — In `cloud_pipeline.py` MUSS dieser Code stehen:
+
+```python
+# RICHTIG (2024+):
+BASE = "https://graph.instagram.com/v22.0"
+ig_id = os.environ.get("IG_USER_ID")
+token = os.environ.get("IG_USER_ACCESS_TOKEN")  # Beginnt mit "IGAA..."
+r = requests.post(f"{BASE}/{ig_id}/media", ...)
+```
+
+```python
+# FALSCH (2018er Meta Graph API — vermeiden!):
+BASE = "https://graph.facebook.com/v21.0"
+ig_id = os.environ.get("IG_BUSINESS_ACCOUNT_ID")  # über FB-Page!
+token = os.environ.get("META_LONG_LIVED_TOKEN")  # Beginnt mit "EAA..."
+r = requests.post(f"{BASE}/{ig_id}/media", ...)
+```
+
+### 26.3 So erkennt der neue Claude welche API du benutzt:
+
+- **Token beginnt mit `IGAA...`** → Neue Instagram Login API ✅ (was wir nutzen)
+- **Token beginnt mit `EAA...`** → Alte Meta Graph API ❌ (nicht nutzen)
+
+Falls beide vorhanden in `.env`: nimm den `IGAA...` Token, ignoriere `EAA...`.
+
+### 26.4 Wenn du auf eine neue Brand umsteigst:
+
+1. Folge dem Instagram-Login-Flow (Schritt 5.1-5.9 in Sektion 5)
+2. Token via Graph API Explorer **NICHT** nutzen — gibt dir den falschen `EAA...` Token
+3. Stattdessen via App-Dashboard → "API-Einrichtung mit Instagram-Login" → "2. Zugriffstokens generieren" → "Token generieren"
+4. Du bekommst den `IGAA...` Token (richtig)
+
+### 26.5 Warum die alte API NICHT mehr empfohlen ist:
+
+- Meta wird sie irgendwann deprecaten (Datum noch nicht angekündigt aber kommt)
+- Komplizierteres Setup (Tech-Provider-Approval, App-Review)
+- Mehr Failure-Points (FB-Page-Disconnect, Permission-Drift)
+- Weniger Zukunftssicherheit
+- Die neue API ist für Solo-Creator und kleinere Brands optimiert
+
+**Wenn du jemand anderen siehst die `graph.facebook.com` für Instagram nutzt: das ist die alte Methode. Neue Implementierungen IMMER auf `graph.instagram.com` setzen.**
+
+---
+
+## 27. Engagement-Banner (mid-carousel SAVE-CTA)
+
+Bereits implementiert in `generate_carousel.py` via `engagement_text` Feld.
+
+### 27.1 Wann einsetzen
+Bei langen Carousels (8+ Slides) auf einer mittleren Slide einen Engagement-Nudge. Beispiele:
+- "💾 SAVE THIS POST — IT'S ABOUT TO GET INTERESTING"
+- "❤️ DOUBLE-TAP IF YOU LEARNED SOMETHING NEW"
+- "📌 SAVE FOR LATER"
+- "🔥 KEEP SCROLLING — BEST FACT COMING"
+
+### 27.2 Wie aktivieren in der Slide-Config:
+```python
+{
+    "type": "engagement",
+    "headline_parts": [...],
+    "subhead_parts": [...],
+    "engagement_text": "💾 SAVE THIS POST — IT'S ABOUT TO GET INTERESTING",
+    ...
+}
+```
+
+### 27.3 Visual:
+- Cyan Hintergrund (`BRAND_PRIMARY`)
+- Schwarzer Text bold
+- Padding 10px 14px
+- Border-radius 4px
+- Erscheint unter dem Description-Text auf der entsprechenden Slide
+
+### 27.4 Best Practice:
+Bei Carousels mit 8+ Slides → Engagement-CTA auf Slide 4 oder 5 (mitten drin, wo User entscheiden ob er weiter scrollt). Bei 6-7 Slides eher nicht — wirkt überladen.
+
+---
+
+---
+
+## 28. 🔄 FALLBACK-CHAINS & FAILURE-ROUTING (PFLICHT-LESEN!)
+
+**GRUNDPRINZIP**: Die Pipeline darf NIEMALS bei einem API-Fehler komplett abbrechen. Jede Komponente hat eine **Fallback-Kette** — wenn X fehlschlägt, automatisch zu Y, dann Z. Erst wenn ALLE durch sind, abbrechen.
+
+### 28.1 Bild-Quellen-Routing (in `generate_carousel.py` → `get_slide_image()`)
+
+```
+1. solid_color gesetzt?      → Generiere Solid-Color-PNG (Pillow) → fertig
+2. local_bg gesetzt?         → Lade Datei aus Projekt-Ordner → fertig
+3. google_query gesetzt?     → Google Images CSE
+                               ├── 200 OK? → fertig
+                               └── Fail? → fallthrough zu Stufe 4 (Pexels)
+4. ai_render: True?          → Together AI FLUX 1.1 Pro
+                               ├── 200 OK? → fertig
+                               ├── 422 NSFW false-positive? → fallthrough zu 5
+                               ├── Network error? → fallthrough zu 5
+                               └── Anderes? → fallthrough zu 5
+5. Default: Pexels           → mit color filter
+                               ├── Treffer > 0? → fertig
+                               └── 0 Treffer? → fallthrough zu 6
+6. Pexels ohne color         → vereinfachte Query (color removed)
+                               └── 0 Treffer? → fallthrough zu 7
+7. Pexels simplified query   → Erste 2 Wörter der Query
+                               └── 0 Treffer? → fallthrough zu 8
+8. Pixabay                   → wenn PIXABAY_API_KEY gesetzt
+                               └── Fail? → finale RuntimeError (kein Bild möglich)
+```
+
+**Code-Pattern** (in `get_slide_image()`):
+```python
+if slide.get("ai_render"):
+    try:
+        return fetch_ai_image(prompt, idx)
+    except Exception as e:
+        print(f"  [{idx}] AI render failed ({e}), fallback Pexels")
+return fetch_pexels_image(...)  # Pexels selber hat eingebaute Fallbacks
+```
+
+**KRITISCH**: jeder API-Call MUSS in try-except. Bei Exception → print Warning + fallthrough zur nächsten Stufe. KEIN `raise` wenn nur eine Quelle nicht antwortet.
+
+### 28.2 Slide-Plan-Routing (in `slide_planner.py` → `plan_slides()`)
+
+```
+1. Gemini Flash (kostenlos)
+   ├── 200 OK? → fertig
+   ├── 503 high demand? → 3 Retries mit exponential backoff (5s, 10s, 20s)
+   ├── Nach 3 Retries weiter Fail? → fallthrough zu Anthropic
+   └── 429 rate limit? → ebenfalls Retry + fallthrough
+2. Anthropic Claude Haiku (falls ANTHROPIC_API_KEY gesetzt)
+   ├── 200 OK? → fertig
+   └── Fail? → finale Exception (Pipeline kann nicht ohne Slide-Plan)
+```
+
+**WICHTIG**: Fallback zu Anthropic nur wenn `ANTHROPIC_API_KEY` in `.env`. Sonst klare Error-Message dass User den Key setzen soll ODER Gemini später nochmal versuchen.
+
+### 28.3 Cloudinary-Upload-Routing
+
+Cloudinary hat keinen Fallback (ohne ihn kann nichts gepostet werden). Bei Fehlern:
+```
+1. Cloudinary upload
+   ├── 200 OK? → fertig
+   ├── 401/403 (auth fail)? → klare Error: "API-Key Permissions prüfen, Master-Admin nötig"
+   ├── Network error? → 3 Retries
+   └── Nach Retries fail? → Pipeline mit klarer Error-Message abbrechen
+```
+
+**Future enhancement**: Imgur als Backup-Image-Host wenn Cloudinary down (~30 Min Code-Aufwand). Aktuell nicht implementiert.
+
+### 28.4 Instagram-Posting-Routing
+
+```
+1. Validate Token (IG_USER_ACCESS_TOKEN existiert + beginnt mit "IGAA")
+   └── Fehlt/falsch? → "no_meta_setup" returnen, Posting skippen
+2. Container pro Bild erstellen
+   ├── 200 OK? → next image
+   ├── 400 invalid image? → log error, skip diesen Slide
+   └── 401 invalid token? → finale "error: token expired" → manueller Token-Refresh nötig
+3. Carousel-Container
+   └── Wie oben
+4. Wait until status = FINISHED (poll alle 2s, max 60s)
+   ├── FINISHED? → Publish
+   ├── ERROR? → log + return "error: container processing failed"
+   └── Timeout? → return "error: container timeout"
+5. Publish
+   ├── 200 OK? → return "posted: <id>"
+   └── Fail? → return "error: <details>"
+```
+
+**Pipeline läuft weiter** auch wenn Posting fehlschlägt — Slides + Caption sind in `output/` gespeichert. User kann manuell posten.
+
+### 28.5 Topic-Refresh-Routing
+
+```
+1. Count active topics in topics.txt
+   └── > 10? → kein Refresh nötig, return 0
+2. Active <= 10 → Gemini call für 50 neue Topics
+   ├── 200 OK? → append + return Anzahl
+   └── Fail? → log warning, KEIN abort der Pipeline (Pipeline läuft weiter mit existierenden Topics)
+```
+
+### 28.6 GENERELLE FAILURE-PHILOSOPHIE
+
+**Reihenfolge der Resilienz** (vom wichtigsten Service zum unwichtigsten):
+
+| Service | Was passiert wenn down |
+|---------|------------------------|
+| **Cloudinary** | Pipeline ABBRUCH (kann nichts hosten) — kritisch |
+| **Instagram API** | Pipeline läuft durch, Slides liegen in `output/`, kein Live-Post |
+| **Gemini** | Fallback Anthropic Haiku → wenn auch down: ABBRUCH |
+| **Together AI** | Fallback Pexels für AI-Slides — Pipeline läuft weiter |
+| **Google CSE** | Fallback Pexels — Pipeline läuft weiter |
+| **Pexels** | Fallback Pixabay — Pipeline läuft weiter |
+| **Pixabay** | Letzter Image-Fallback — wenn auch down: ABBRUCH |
+
+**Maxim**: **Lieber posten mit suboptimalem Bild als gar nicht posten.** Bilder können später ersetzt werden, ein verpasster Tag im Auto-Posting ruiniert den Algo.
+
+### 28.7 Code-Pattern für jeden API-Call (Template)
+
+```python
+def fetch_with_fallback(query, idx):
+    """Beispiel-Pattern für API-Call mit Fallback."""
+    api_key = os.environ.get("PRIMARY_KEY", "").strip()
+    if not api_key:
+        # Statt raise → fallthrough zur Backup-Funktion
+        print(f"  [{idx}] Primary key not set, using fallback")
+        return fetch_backup(query, idx)
+    
+    for attempt in range(3):
+        try:
+            r = requests.get(URL, params={...}, timeout=30)
+            if r.status_code == 200:
+                return process(r.json())
+            elif r.status_code in (503, 429):
+                time.sleep(5 * (2 ** attempt))
+                continue
+            else:
+                # Fataler Fehler → Fallback nutzen statt abbrechen
+                break
+        except requests.exceptions.RequestException as e:
+            time.sleep(5 * (2 ** attempt))
+            continue
+    
+    # Nach allen Retries → Fallback
+    print(f"  [{idx}] Primary failed after retries, using fallback")
+    return fetch_backup(query, idx)
+
+
+def fetch_backup(query, idx):
+    """Backup-Implementierung (z.B. Pexels statt Together AI)."""
+    try:
+        return fetch_alternative_api(query, idx)
+    except Exception as e:
+        # Wenn auch Backup fail → letzte Ausnahme erlauben
+        raise RuntimeError(f"Both primary and backup failed: {e}")
+```
+
+### 28.8 Was der neue Claude TUN MUSS bei API-Fehlern:
+
+1. **NIEMALS** `raise` als ersten Reflex bei API-Fehler. Erst Fallback versuchen.
+2. **IMMER** `try/except` um externe API-Calls.
+3. **IMMER** Retry-Logik mit exponential backoff für 5xx Status Codes.
+4. **IMMER** im Log-Output deutlich machen welche Quelle gerade genutzt wird (`print(f"  [{idx}] Pexels search ...")`).
+5. **NIE** alle Fallbacks mit `raise` beenden ohne final-error message die dem User sagt was zu tun ist.
+6. **TIMEOUT immer setzen** (`timeout=30` oder höher) — kein Endless-Loop.
+
+---
+
+---
+
+## 29. TEXT-HIERARCHIE: H1 / H2 / Description / CTA — Wann was nutzen
+
+**4 Text-Ebenen pro Slide. Jede hat eine Funktion. Niemals mischen.**
+
+### 29.1 Die 4 Ebenen
+
+| Ebene | Was | Größe | Wann nutzen | Pflicht? |
+|-------|-----|-------|-------------|----------|
+| **H1 (headline_parts)** | Hauptaussage, Hook | 17-39px (auto) | IMMER auf jedem Slide | ✅ Pflicht |
+| **H2 (subhead_parts)** | Erklärung des Hooks, ~60% der H1-Größe | ~14-23px | Wenn Hook erweitert werden soll | ⚪ Optional |
+| **Description (description_parts)** | Dritte Ebene, kleinste | 15px (fix) | Nur Outro-Slide oder spezielle Slides | ⚪ Selten |
+| **CTA (follow_cta automatisch)** | Engagement-Hinweis | 8px (klein) ODER 22px (Outro big) | Auf allen Slides außer letzter | Auto |
+
+### 29.2 H1 — die wichtigste Ebene
+
+**Funktion**: Stoppt den Scroll. 3-15 Wörter. UPPERCASE. Bold (Oswald 700).
+
+**Style-Mix Regel**: Verbindungswörter dünn, Keywords fett, Topic-Hauptbegriffe in cyan.
+
+```python
+# BEISPIEL — HERO SLIDE H1:
+"headline_parts": [
+    ("FASTING ", "regular"),       # dünn (Verbindungswort + Action)
+    ("72 HOURS", "primary"),        # cyan bold (Topic-Hauptbegriff = Zahl)
+],
+# Output: "FASTING 72 HOURS" — "FASTING" dünn, "72 HOURS" cyan-bold
+```
+
+```python
+# BEISPIEL — CONTENT SLIDE H1 (mehr Wörter):
+"headline_parts": [
+    ("AT HOUR 12, ", "regular"),       # dünn (Zeitangabe-Connector)
+    ("KETOSIS", "primary"),              # cyan (Schlüsselbegriff)
+    (" BEGINS — YOUR BODY ", "regular"), # dünn
+    ("EATS ITS OWN FAT", "bold"),        # bold weiß (Kern-Aussage)
+],
+# Output: "AT HOUR 12, KETOSIS BEGINS — YOUR BODY EATS ITS OWN FAT"
+# Visuell: KETOSIS cyan, EATS ITS OWN FAT bold weiß, Rest dünn weiß
+```
+
+### 29.3 H2 — die Erklärungs-Ebene
+
+**Funktion**: Erläutert/expandiert die H1. ~60% der H1-Größe. Auch UPPERCASE und Oswald aber 600 weight.
+
+```python
+# BEISPIEL — Hero Slide H2 (unter H1 "72 HOURS WITHOUT FOOD"):
+"subhead_parts": [
+    ("WHAT IT DOES TO YOUR BODY WILL ", "white"),  # bold weiß
+    ("SHOCK", "primary"),                            # cyan
+    (" YOU", "white"),                               # bold weiß
+],
+# Output: "WHAT IT DOES TO YOUR BODY WILL SHOCK YOU"
+```
+
+**Wann H2 weglassen**:
+- Bei sehr kurzen H1 die alleine stark genug sind ("FASTING 72 HOURS" + ohne H2)
+- Wenn das Bild die Erklärung trägt
+- Wenn slide-Inhalt komplex ist und H2 zu viel zusätzliche Info wäre
+
+**Wann H2 nutzen**:
+- Hero-Slide (Hook + Promise)
+- Wenn H1 zu kurz ist um den Punkt zu machen
+- Wenn der User mehr Kontext braucht bevor er swipt
+
+### 29.4 Description — die Detail-Ebene (selten)
+
+**Nur auf Outro-Slide** oder wenn ein Slide echt eine 3. Text-Ebene braucht.
+
+```python
+# BEISPIEL — Outro Slide Description:
+"description_parts": [
+    ("WHICH FACT ", "regular"),
+    ("SHOCKED", "primary"),
+    (" YOU MOST?<br>TELL ME IN THE ", "regular"),
+    ("COMMENTS", "bold"),
+    (" 👇", "primary"),
+],
+```
+
+`<br>` für Zeilenumbruch erlaubt. 15px fix size, Oswald 600.
+
+### 29.5 CTA — automatisch generiert
+
+**Auf jedem Slide außer letzter** wird automatisch unter H1/H2 dieser CTA angefügt:
+```
+FOLLOW @HEALTHRECODE TO NOT MISS MORE
+```
+- 8px Inter 600 cyan
+- Wird automatisch von `slide_html()` eingefügt wenn `is_cta=False`
+- Auf der LETZTEN Outro-Slide wird stattdessen `big_follow_cta_parts` benutzt (groß, mehrere Zeilen)
+
+### 29.6 Style-Markers im Code (Auswahl)
+
+```python
+"primary"   → cyan #00CFE8, font-weight: 700  (Brand-Akzent für 1-2 Keywords)
+"bold"      → white, font-weight: 700          (Keywords / wichtige Aussagen)
+"regular"   → white-92%, font-weight: 300      (Verbindungswörter, dünn)
+"normal"    → white, font-weight: 400          (Standard-Text, nicht bold/nicht dünn)
+"white"     → white, font-weight: 700          (Default fallback, bold)
+```
+
+### 29.7 Mix-Faustregeln (PFLICHT befolgen!)
+
+1. **Maximum 2 cyan/primary Wörter pro Headline** — sonst Overload
+2. **Verbindungswörter immer regular** ("the", "is", "and", "your", "in", "of", "on", "to", "for")
+3. **Schlüsselbegriffe immer bold oder primary** ("KETOSIS", "BRAIN", "STUDY", Zahlen)
+4. **Niemals 3+ aufeinanderfolgende Wörter in primary** (ergibt cyan-Wand, schwer lesbar)
+5. **Default-Fall**: wenn unsicher → "white" (bold weiß) — sicher und lesbar
+
+### 29.8 Visual-Hierarchy-Test (vor Posting)
+
+Frag dich:
+- Kann ich die **wichtigste Aussage in 1 Sekunde** erkennen? → H1 muss diesen Punkt machen
+- Hilft H2 mir das zu verstehen oder ist es Lärm? → wenn Lärm: H2 weglassen
+- Sticht **mindestens 1 cyan Wort** raus für visuellen Anker? → falls nein: ein Schlüsselwort als primary markieren
+- Ist die Headline **kürzer als 100 Zeichen**? → falls nein: kürzer fassen, sonst auto-size schrumpft sie zu klein
+
+---
+
+---
+
+## 30. HTML-Template & Playwright-Export (komplett)
+
+Das EXAKTE HTML/CSS Setup damit der neue Claude bei einer neuen Brand 1:1 reproduzieren kann.
+
+### 30.1 HTML-Grundstruktur einer einzelnen Slide
+
+```html
+<div class="slide" id="slide-{idx}">
+  <!-- 1. Foto-Hintergrund (Pexels/AI/Solid-Color) -->
+  <img class="bg-photo" src="data:image/jpeg;base64,..." />
+  
+  <!-- 2. Dunkler Gradient von unten nach oben -->
+  <div class="bg-gradient"></div>
+  
+  <!-- 3. Vital-Signs Strip oben rechts -->
+  <div class="vitals-strip">
+    <span class="pulse-dot"></span>
+    <span class="label">HR</span> <span class="value">72</span>
+    <span class="label">·</span>
+    <span class="label">SpO₂</span> <span class="value">98%</span>
+    <span class="label">·</span>
+    <span class="label">T</span> <span class="value">36.7°C</span>
+  </div>
+  
+  <!-- 4. Right-Edge Pfeil-Pill (außer letzter Slide) -->
+  <div class="swipe-arrow-right">
+    <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </div>
+  
+  <!-- 5. Bottom-Stack: Logo + Headlines + CTAs -->
+  <div class="bottom-stack">
+    <!-- 5a. Logo-Block (außer Outro) -->
+    <div class="logo-block">
+      <div class="logo-line left"></div>
+      <span class="logo-text">HEALTH</span>
+      <img class="logo-center-icon" src="data:image/png;base64,..." />
+      <span class="logo-text">RECODE</span>
+      <div class="logo-line right"></div>
+    </div>
+    
+    <!-- 5b. H1 Headline (auto-size) -->
+    <h1 class="headline" style="font-size:30px">
+      <span style="color:#fff;font-weight:300">AT HOUR 12, </span>
+      <span style="color:#00CFE8;font-weight:700">KETOSIS</span>
+      <span style="color:#fff;font-weight:300"> BEGINS</span>
+    </h1>
+    
+    <!-- 5c. H2 Subhead (optional) -->
+    <h2 class="subhead" style="font-size:18px">...</h2>
+    
+    <!-- 5d. Description (optional, meist Outro) -->
+    <div class="description">...</div>
+    
+    <!-- 5e. Follow-CTA (auf jedem Slide außer Outro) -->
+    <div class="follow-cta">FOLLOW @HEALTHRECODE TO NOT MISS MORE</div>
+    
+    <!-- 5f. Engagement-Banner (mid-carousel, optional) -->
+    <div class="engagement-banner">💾 SAVE THIS POST — IT'S ABOUT TO GET INTERESTING</div>
+  </div>
+  
+  <!-- 6. Profile-Card Embed (NUR Outro-Slide) -->
+  <div class="profile-card-embed">
+    <img src="data:image/jpeg;base64,..." />
+  </div>
+  
+  <!-- 7. Swipe-CTA unten (außer Outro) -->
+  <div class="swipe-cta">
+    <span>SWIPE FOR MORE</span>
+    <svg class="swipe-arrow-mini" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </div>
+  
+  <!-- 8. Share-CTA (NUR Outro-Slide) -->
+  <div class="share-cta">Share this with your Friends →</div>
+</div>
+```
+
+### 30.2 Carousel-Wrapper (mehrere Slides nebeneinander)
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;600;700;800&family=Oswald:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>/* ... siehe Sektion 30.3 ... */</style>
+</head>
+<body>
+  <div class="ig-frame">
+    <div class="carousel-viewport">
+      <div class="carousel-track" id="track">
+        <!-- Mehrere .slide divs hier -->
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+**WICHTIG**:
+- `.ig-frame` MUSS exakt **420px breit** sein
+- `.carousel-viewport` MUSS **420×525** mit `overflow:hidden`
+- `.carousel-track` ist horizontal flex: wenn 8 Slides → 8 × 420 = 3360px breit, wird per JS verschoben
+
+### 30.3 Vollständiges CSS (kopierbar)
+
+Alle Styles in `<style>`-Tag im `<head>`. Hier die kritischen Klassen mit exakten Werten:
+
+```css
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a1a; font-family: 'Inter', sans-serif; color: white; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+.ig-frame { width: 420px; overflow: hidden; }
+.carousel-viewport { width: 420px; height: 525px; position: relative; }
+.carousel-track { display: flex; transition: none; transform: translateX(0); }
+
+.slide { flex: 0 0 420px; width: 420px; height: 525px; position: relative; overflow: hidden; background: #0A0A0F; color: white; font-family: 'Inter', sans-serif; }
+
+.bg-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05) contrast(1.05); }
+
+.bg-gradient { position: absolute; inset: 0; background: linear-gradient(180deg,
+    rgba(10,10,15,0.0) 0%, rgba(10,10,15,0.0) 25%,
+    rgba(10,10,15,0.35) 40%, rgba(10,10,15,0.75) 55%,
+    rgba(10,10,15,0.92) 70%, rgba(10,10,15,0.98) 85%,
+    rgba(10,10,15,1.0) 100%); }
+
+.vitals-strip { position: absolute; top: 14px; right: 14px; z-index: 6; display: flex; align-items: center; gap: 6px; padding: 3px 8px; background: rgba(0,0,0,0.18); backdrop-filter: blur(4px); border-radius: 3px; border: 1px solid rgba(255,255,255,0.05); font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 7.5px; color: rgba(255,255,255,0.55); letter-spacing: 0.3px; }
+.vitals-strip .label { color: rgba(255,255,255,0.35); }
+.vitals-strip .value { color: rgba(0,207,232,0.75); font-weight: 700; }
+.vitals-strip .pulse-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(0,207,232,0.75); margin-right: 1px; box-shadow: 0 0 4px rgba(0,207,232,0.5); }
+
+.bottom-stack { position: absolute; bottom: 70px; top: 55%; left: 0; right: 0; padding: 0 24px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; z-index: 5; text-align: center; overflow: visible; }
+.bottom-stack.top-position { top: 40px; bottom: auto; gap: 10px; }
+
+.logo-block { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.logo-line { flex: 0 0 70px; height: 1px; background: linear-gradient(to right, transparent, #00CFE8, #00CFE8); }
+.logo-line.right { background: linear-gradient(to left, transparent, #00CFE8, #00CFE8); }
+.logo-text { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 2.5px; color: white; }
+.logo-center-icon { width: 16px; height: 16px; object-fit: contain; margin: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
+
+.headline { font-family: 'Oswald', 'Anton', sans-serif; font-weight: 700; text-transform: uppercase; line-height: 1.0; letter-spacing: 0.3px; color: white; margin-bottom: 2px; text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40); }
+.subhead { font-family: 'Oswald', 'Anton', sans-serif; font-weight: 600; text-transform: uppercase; line-height: 1.05; letter-spacing: 0.3px; color: rgba(255,255,255,0.92); margin-bottom: 0; margin-top: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.35); }
+
+.tag { display: none; }
+
+.follow-cta { font-family: 'Inter', sans-serif; font-size: 8px; font-weight: 600; letter-spacing: 1px; color: #00CFE8; text-transform: uppercase; margin-top: 2px; }
+
+.big-follow-cta { font-family: 'Oswald', sans-serif; font-weight: 400; font-size: 22px; line-height: 1.2; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 18px; text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40); }
+
+.description { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.25; letter-spacing: 0.2px; text-transform: uppercase; margin-top: 14px; text-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.30); }
+
+.engagement-banner { margin-top: 14px; padding: 10px 14px; background: #00CFE8; color: black; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px; border-radius: 4px; text-align: center; text-transform: uppercase; }
+
+.swipe-cta { position: absolute; bottom: 30px; left: 0; right: 0; z-index: 6; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.swipe-cta span { font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 3px; color: rgba(255,255,255,0.85); font-weight: 600; }
+.swipe-arrow-mini { width: 11px; height: 11px; stroke: rgba(255,255,255,0.85); }
+
+.swipe-arrow-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.18); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 7; }
+.swipe-arrow-right svg { width: 14px; height: 14px; stroke: white; }
+
+.profile-card-embed { position: absolute; bottom: 50px; left: 24px; right: 24px; z-index: 4; border-radius: 8px; overflow: hidden; border: 1.5px solid rgba(0,207,232,0.55); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.profile-card-embed img { width: 100%; display: block; object-fit: cover; }
+
+.share-cta { position: absolute; bottom: 32px; left: 0; right: 0; z-index: 5; text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13px; color: rgba(255,255,255,0.95); letter-spacing: 0.6px; text-shadow: 0 2px 6px rgba(0,0,0,0.30); }
+```
+
+### 30.4 Playwright-Export-Skript (HTML → 1080×1350 PNG)
+
+```python
+async def export_slides(html_path: Path, total_slides: int, only: int = None):
+    from playwright.async_api import async_playwright
+    
+    VIEW_W, VIEW_H = 420, 525
+    SCALE = 1080 / 420  # = 2.5714 — KRITISCH: keine Viewport-Resize!
+    
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page(
+            viewport={"width": VIEW_W, "height": VIEW_H},
+            device_scale_factor=SCALE,  # ← magic, scaled output ohne Layout-Reflow
+        )
+        
+        await page.set_content(html_path.read_text(), wait_until="networkidle")
+        await page.wait_for_timeout(3500)  # Fonts laden!
+        
+        # IG-Frame-Chrome ausblenden (falls vorhanden)
+        await page.evaluate("""() => {
+            document.body.style.cssText = 'padding:0;margin:0;display:block;overflow:hidden;background:#0A0A0F;';
+            const f = document.querySelector('.ig-frame');
+            f.style.cssText = 'width:420px;height:525px;overflow:hidden;margin:0;';
+            const v = document.querySelector('.carousel-viewport');
+            v.style.cssText = 'width:420px;height:525px;overflow:hidden;position:relative;';
+        }""")
+        await page.wait_for_timeout(500)
+        
+        # Pro Slide: track per JS verschieben + Screenshot
+        for i in range(total_slides):
+            await page.evaluate("""(idx) => {
+                const t = document.getElementById('track');
+                t.style.transition = 'none';
+                t.style.transform = 'translateX(' + (-idx * 420) + 'px)';
+            }""", i)
+            await page.wait_for_timeout(400)
+            slide_num = only if only else (i + 1)
+            await page.screenshot(
+                path=f"output/slide_{slide_num}.png",
+                clip={"x": 0, "y": 0, "width": VIEW_W, "height": VIEW_H},
+            )
+        
+        await browser.close()
+```
+
+**Pitfalls beim Export**:
+1. ❌ NIEMALS `viewport` auf 1080×1350 setzen — Layout reflowt, Schriften zu klein.
+2. ✅ IMMER `device_scale_factor=2.5714` — DPI hochgesetzt, Layout bleibt 420×525.
+3. ✅ IMMER 3000-3500ms warten nach `set_content` damit Google Fonts laden.
+4. ❌ NIEMALS Bilder als externe URLs im HTML — IMMER base64-data-URIs einbetten (Playwright kann sonst Bilder nicht laden).
+5. ✅ HTML mit Python `Path.write_text()` erzeugen — niemals via Shell mit `echo` (`$` und `{}` werden interpoliert).
+
+### 30.5 Build-HTML-Funktion (Python-Wrapper)
+
+```python
+def build_html(slides_with_images):
+    total = len(slides_with_images)
+    brand_logo = load_brand_logo()      # base64 vom logo.png (falls da)
+    center_icon = load_center_icon()    # base64 vom healthrecodeicon.png
+    
+    slide_blocks = "\n".join(
+        slide_html(i + 1, s, total, img, brand_logo, center_icon)
+        for i, (s, img) in enumerate(slides_with_images)
+    )
+    
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+  <link href="..google fonts..." rel="stylesheet">
+  <style>{COMPLETE_CSS}</style>
+</head>
+<body>
+  <div class="ig-frame">
+    <div class="carousel-viewport">
+      <div class="carousel-track" id="track">
+        {slide_blocks}
+      </div>
+    </div>
+  </div>
+</body>
+</html>"""
+```
+
+### 30.6 Bilder als base64 einbetten (PFLICHT!)
+
+```python
+def img_to_base64(path: Path) -> str:
+    data = path.read_bytes()
+    mime = "jpeg" if path.suffix.lower() in (".jpg", ".jpeg") else "png"
+    return f"data:image/{mime};base64,{base64.b64encode(data).decode()}"
+```
+
+**Warum**: Playwright `set_content()` lädt externe URLs unzuverlässig. Base64-Embed garantiert dass Bild im HTML ist beim Render.
+
+### 30.7 Render-Pipeline-Steps (komplette Übersicht)
+
+```
+1. fetch_*_image()          → lokale Datei (jpg/png)
+2. img_to_base64()           → embed in HTML
+3. slide_html(...)           → erzeugt 1 Slide-Div mit allen Elements
+4. build_html(slides)        → fügt alle Slide-Divs zu Carousel zusammen + CSS + Fonts
+5. .write_text(html_path)    → speichert als output/carousel.html
+6. export_slides(html, n)    → Playwright öffnet Headless Chromium, screenshotted N Slides
+7. Output: output/slide_1.png ... slide_N.png  (1080×1350)
+```
+
+---
+
+---
+
+## 31. 🐛 KOMPLETTE FEHLER-BIBEL — Alle Fehler die wir hatten + Fix
+
+**Diese Liste ist GOLD WERT** — jeder Eintrag ist ein echter Fehler aus dem Setup-Prozess. Der neue Claude liest dies bevor er irgendwas macht damit er die Stunden Frust nicht erneut durchlebt.
+
+### 31.1 Setup-Fehler (Service-Konfiguration)
+
+#### CLOUDINARY
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| `Invalid cloud_name "medical"` | User hat **API-Key-Label** statt Cloud-Name verwendet | Cloud-Name ist auto-generiert (`dxxx...`-Format) — im Dashboard top-section, NICHT im "API Keys"-Tab |
+| `Request forbidden — actions=["create"]` | API-Key ohne Master-Admin-Permission | Cloudinary Console → API Keys → Edit Key → Roles → **"Master Admin"** wählen |
+| Upload nur 7 statt 8 Slides | `range(1, 8)` hardcoded in cloud_pipeline.py | Glob-Pattern `output.glob("slide_*.png")` mit dynamischer ID-Extraction |
+
+#### GOOGLE CUSTOM SEARCH (für echte Personen)
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| `blocked-by-allowlist` in Sandbox | Domain nicht im Sandbox-Allowlist | Skript MUSS auf User-PC oder GitHub Actions laufen, nicht in Cowork-Sandbox |
+| `403 — Custom Search API not enabled` | API nicht aktiviert in Cloud-Projekt | https://console.cloud.google.com/apis/library/customsearch.googleapis.com → Aktivieren |
+| `403 — API method blocked` | API-Key hatte Restriction nur auf Gemini | Neue API-Key OHNE Restrictions ODER Custom Search API zur Allowlist hinzufügen |
+| `403 — Project does not have access` | Billing-Konto fehlt im Cloud-Projekt | Cloud-Projekt mit aktivem Billing-Account verlinken (Trial $300 reicht ewig) |
+| Toggle "Search entire web" fehlt | Google hat das deprecated | Liste manuell mit Sites füllen (`wikipedia.org`, `flickr.com`, `pinterest.com`) ODER Quelle skippen |
+
+#### INSTAGRAM API
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| `Entwickler-Rolle nicht ausreichend` | @handle nicht als Instagram-Tester registriert | App-Rollen → "+ Person..." → Rolle "Instagram-Tester" → Username eingeben |
+| Permission `instagram_content_publish` lässt sich nicht aktivieren | User hat die "business"-Variante versucht (`instagram_business_content_publish`), die braucht Tech-Provider-Status | **Die ältere `instagram_content_publish`** (ohne "business" prefix) nehmen — funktioniert in Dev-Mode |
+| Tester-Status bleibt "Ausstehend" | Einladung nicht im IG-Account angenommen | Auf instagram.com **als @handle** einloggen → Einstellungen → Apps und Websites → Tester-Einladungen → **Annehmen** |
+| Token beginnt mit `EAA...` statt `IGAA...` | User hat Token via Graph API Explorer geholt (alte API) | Token via App-Dashboard → "API-Einrichtung mit Instagram-Login" → "2. Zugriffstokens generieren" holen |
+| `Instagram Posting: no_meta_setup` | post_to_instagram() prüft alte Env-Vars (`IG_BUSINESS_ACCOUNT_ID`, `META_LONG_LIVED_TOKEN`) | Nutze NEUE Env-Vars: `IG_USER_ID` + `IG_USER_ACCESS_TOKEN` mit Endpoint `graph.instagram.com/v22.0` |
+
+#### GITHUB
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| `Repository not found` beim Push | PAT (Personal Access Token) ohne Permissions ODER falsche URL | PAT mit `repo` Scope erstellen, URL prüfen: `https://USER:TOKEN@github.com/USER/REPO.git` |
+| `refusing to allow PAT — workflow scope` | PAT hat nur `repo` Scope, nicht `workflow` | NEUEN PAT mit BEIDEN Scopes (`repo` + `workflow`) erstellen |
+| `fatal: unable to auto-detect email` | Git-Config nicht gesetzt | `git config --global user.email "..."` und `user.name "..."` |
+| "Re-run jobs" nutzt ALTEN Code | GitHub Actions Re-Run nimmt Original-Commit, nicht latest | NEUEN Run via "Run workflow" Button (workflow_dispatch) starten — nimmt latest commit |
+
+### 31.2 Code-Bugs (Pipeline-Crashes)
+
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| `TypeError: 'NoneType' object is not subscriptable` | OUTRO_COMMENT war None nach Refactor, wurde aber noch in Liste appended | `outros = [o for o in (...) if o]` — None filtern. Plus defensive `if slide is None: continue` in iteration |
+| `KeyError: 'pexels_query'` in `_normalize_slide()` | Hardcoded required field, Gemini gab manchmal nur `ai_render` oder `google_query` | Alle Felder als `s.get(field, default)` — niemals `s["field"]` direkt |
+| `Together AI fail: 422 image may contain NSFW content` | False-positive Filter bei "healthy body cells" Prompt | try/except um `fetch_ai_image()` → Fallback `fetch_pexels_image()` |
+| `Gemini API fail: 503 high demand` | Google API überlastet | 3 Retries mit exponential backoff (5s/10s/20s) → fallback Anthropic Haiku falls Key gesetzt |
+| Cloudinary Upload nur 7 Bilder bei 8 Slides | `range(1, 8)` hardcoded | `output.glob("slide_*.png")` dynamisch zählen |
+
+### 31.3 Visual-Bugs (Layout-Probleme)
+
+| Problem | Ursache | Fix |
+|---------|---------|-----|
+| Text unleserlich auf hellem Foto-Hintergrund | Background-Gradient zu schwach (`0.65` opacity max) | Stärkerer Gradient: `0.35→0.75→0.92→0.98→1.0` ab 40% von oben |
+| Text-Shadow zu subtil | `0.10` opacity ist fast unsichtbar | Stärker: `text-shadow: 0 3px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.40)` |
+| H1 zu groß | Auto-Size Default zu groß | `calc_headline_size()` überall um 15% verkleinern (39→34→30→26 statt 46→40→35→30) |
+| Bottom-Stack nimmt 70% des Slides | Kein max-height enforced | `top: 55%` als upper-bound — zwingt Stack in untere 45% |
+| Logo zu weit weg von Headline | `gap: 14px` im flex container | `gap: 6px` — tighter |
+| Logo top-left nervig/unnötig | Icon doppelt mit Logo-Block in Mitte | `brand_logo_html = ""` — komplett ausgeblendet |
+| Vital-Strip zu prominent | Transparenz nur 45% schwarz, Text 85% weiß | Reduzieren: 18% schwarz, Text 55% weiß, Werte 75% cyan |
+| "@YOUR_HANDLE" steht auf Slide | `BRAND_HANDLE` nicht aktualisiert | Pro neue Brand: `BRAND_HANDLE = "@<handle>"` ganz oben in generate_carousel.py setzen |
+| Dots auf Slide doppelt mit Instagram-Dots | IG fügt eigene Dots hinzu beim Posten | `dots_html = ""` — keine Dots in HTML einbauen |
+
+### 31.4 Visual-Content-Bugs (schlechte Bilder)
+
+**Häufigster Fehler**: Pexels liefert random unpassende Stock-Photos weil Query zu abstrakt.
+
+| Schlechte Query | Was zurückkam | Bessere Query |
+|-----------------|---------------|---------------|
+| `"metabolism concept energy conversion"` | random food/abstract | `"young woman holding stomach hungry"` |
+| `"energy depletion"` | random landscapes | `"empty water glass on wooden table"` |
+| `"vitality concept"` | abstract sunset | `"man drinking water at sunrise"` |
+| `"person meditating calm serene"` | generic sunset profile | `"3D anatomical render human heart"` (für Hero — AI render) |
+| `"healthy gut food metabolism"` | random foods | `"3D render human stomach anatomy"` (AI render) |
+| `"brain energy focus"` | generic abstract | `"3D anatomical render brain neurons firing"` (AI render) |
+
+**FIX im slide_planner.py System-Prompt** (Sektion 17.5):
+- Verboten: abstrakte Wörter wie "energy", "metabolism", "concept", "vitality", "depletion"
+- Erlaubt: konkrete Szenen "young woman holding stomach in pain", "scientist examining microscope"
+- Anatomie/Prozess → IMMER AI-Render mit detailliertem 3D-Prompt, NICHT Pexels
+
+### 31.5 Token & Auth-Bugs
+
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| Replicate `402 Insufficient credit` | $1 Trial-Credit gibt's nicht mehr seit 2025 | Konto aufladen ($5 minimum) ODER auf Together AI/Pollinations switchen |
+| Together AI `402 Credit limit exceeded` | Free-Tier Modelle (`FLUX.1-schnell-Free`) blockiert | $5 Aufladung — mit FLUX Schnell ~1700 Bilder = 240 Carousels |
+| Pollinations `Bad quality` | Free-Tier ohne Premium-Modelle | Skippen — bei medizinischem Content reicht es nicht |
+| Gemini `429 quota exceeded` für image gen | Free-Tier hat **kein** Bild-Generation Credit | Bilder via Together AI/Replicate, nicht Gemini |
+
+### 31.6 Cross-Posting / Distribution
+
+| Problem | Ursache | Fix |
+|---------|---------|-----|
+| Posts erscheinen nicht auf Facebook | IG-FB Cross-Posting nicht aktiviert | Instagram-App → Profil → Account Center → "Synchronisierte Beiträge" → FB-Page aktivieren |
+| Cross-Post will auf privates FB-Profil statt Page | Account Center verbindet Personal-Profile | Page-Verknüpfung in Meta Business Suite separat konfigurieren |
+| Carousels haben keine Musik | IG Music-API existiert nicht für Carousel-Posts | Manuell in IG-App: Post → Bearbeiten → "Musik hinzufügen" (10 Sek/Post) |
+
+### 31.7 Konfiguration / Brand-Setup
+
+| Fehler | Ursache | Fix |
+|--------|---------|-----|
+| Logo-Block zeigt "MEDICAL INSTA" statt "HEALTH RECODE" | Default-Werte nicht überschrieben | `BRAND_NAME`, `BRAND_DISPLAY`, `BRAND_WORD_LEFT`, `BRAND_WORD_RIGHT` in generate_carousel.py top-section setzen |
+| Profile-Card im Outro fehlt/falsch | `embed_profile_card` zeigt auf nicht-existente Datei | Profile-Screenshot als `<brand>follow.jpg` speichern + Pfad updaten |
+| Center-Icon zu groß/klein | Standard 16×16px passt nicht zu allen Logos | `.logo-center-icon { width: Xpx; }` anpassen, Icon-PNG mit transparentem Hintergrund |
+
+### 31.8 Was funktioniert NICHT (deprecated/blocked):
+
+- ❌ **Replicate $1 Trial** — gibt es nicht mehr automatisch
+- ❌ **Together AI Free-Tier-Modelle** — komplett deaktiviert seit 2025
+- ❌ **Unsplash für Auto-Posting** — ToS verbietet "non-automated use"
+- ❌ **Google CSE "Search entire web"** Toggle — deprecated
+- ❌ **Instagram Music API für Carousels** — existiert nicht, nur manuell in App
+- ❌ **GitHub Actions "Re-run jobs"** für Code-Updates — nimmt alten Commit
+- ❌ **Pollinations.ai für medizinischen Content** — Qualität unzureichend
+- ❌ **`graph.facebook.com/v21.0` für Instagram-Posts** — alte API, fragil
+
+### 31.9 GOLDENE REGELN (basierend auf allen Fehlern)
+
+1. **Bei API-Setup IMMER alle 4 Schritte prüfen**: Account angemeldet, API in Cloud aktiviert, API-Key mit richtigen Permissions, Billing falls nötig.
+2. **NIEMALS Test-Run via "Re-run jobs"** — IMMER frischen "Run workflow"-Trigger.
+3. **NIEMALS Instagram-Token via Graph API Explorer** für die neue Instagram Login API — IMMER via App-Dashboard "API-Einrichtung mit Instagram-Login".
+4. **IMMER `git push` nach Code-Änderung** vor neuem Workflow-Run, sonst läuft alter Code.
+5. **IMMER 5 Min warten nach Cloud-Permission-Änderung** (Google/Meta brauchen Propagationszeit).
+6. **Pexels-Queries IMMER konkret und visuell**, niemals abstrakte Konzepte.
+7. **Anatomie/Prozesse IMMER via AI-Render**, NIEMALS via Pexels.
+8. **Image-Cache vor Test-Lauf manchmal löschen** (`rm -rf image_cache/*`) — sonst zeigt cached oldes Bild trotz neuer Query.
+9. **`.env` NIEMALS in Repo** — `.gitignore` muss korrekt sein, sonst Keys public.
+10. **Nach allen Tests vor Live-Post IMMER Dry-Run = true** — visual checken, dann erst echtes Posting.
+
+---
+
+---
+
+## 32. 🎣 HOOK-REGELN (KRITISCH — bestimmt ob Post viral geht oder floppt!)
+
+**Ein schwacher Hook = Post scrollt vorbei. Pflichtlektüre für jeden neuen Claude.**
+
+### 32.1 Was IST ein Hook?
+
+Der Hook ist die **Headline + Subhead Kombination auf Slide 1**. Er muss in **<2 Sekunden** den Daumen stoppen und Neugier auslösen, **bevor** der User weiterscrollt.
+
+### 32.2 Anatomie eines starken Hooks
+
+Jeder Hook braucht 3 von diesen 5 Zutaten:
+
+1. **Spezifität** (Zahlen, Namen, konkrete Begriffe)
+   - ❌ "EARLY MORNING ROUTINE"
+   - ✅ "WHY 4:17 AM IS THE EXACT WAKE-UP TIME ELITE PERFORMERS USE"
+
+2. **Curiosity Gap** (Information promise, die nur durch Swipe befriedigt wird)
+   - ❌ "MORNING TIPS"
+   - ✅ "THE 1 THING ELITE PERFORMERS DO BEFORE 5 AM THAT 99% OF PEOPLE SKIP"
+
+3. **Stakes/Konsequenz** (was passiert wenn man's NICHT macht)
+   - ❌ "BENEFITS OF EARLY RISING"
+   - ✅ "WAKING UP AFTER 7 AM CRASHES YOUR CORTISOL — HERE'S THE FIX"
+
+4. **Authority/Studie/Quelle** (Glaubwürdigkeit)
+   - ❌ "FASTING IS GOOD"
+   - ✅ "HARVARD STUDY: 72-HOUR FAST TRIGGERS A NOBEL-PRIZE PROCESS"
+
+5. **Schock/Überraschung** (counterintuitive Aussage)
+   - ❌ "EATING HEALTHY"
+   - ✅ "STUDY SHOWS BUTTER MAY ACTUALLY BE HEALTHIER THAN OLIVE OIL"
+
+### 32.3 Bad Hook Beispiele (REAL aus diesem Projekt — vermeiden!)
+
+| ❌ Schlechter Hook | Warum es nicht funktioniert |
+|----|----|
+| "THE 4 AM ADVANTAGE" | 3 Wörter, keine Spezifik, generisch — niemand weiß was drin ist |
+| "MORNING ROUTINE TIPS" | Klingt wie 1 Million andere Posts |
+| "FASTING IS GOOD" | Kein Gap, kein Stakes, vage |
+| "BENEFITS OF MEDITATION" | Generisch, kein Hook-Element |
+| "HEALTHY EATING" | Reines Topic, kein Hook |
+| "WHY YOU SHOULD SLEEP MORE" | Keine Spezifik, kein Curiosity-Gap |
+
+### 32.4 Good Hook Beispiele (verwenden!)
+
+| ✅ Starker Hook | Was funktioniert |
+|----|----|
+| "WHAT 72 HOURS WITHOUT FOOD DOES TO YOUR BODY WILL SHOCK YOU" | Spezifische Zahl + Schock-Curiosity |
+| "AT HOUR 24 OF FASTING, YOUR CELLS START EATING THEMSELVES" | Spezifik + Counterintuitive + Anatomie-Detail |
+| "THE 4-7-8 BREATHING TECHNIQUE NAVY SEALS USE TO FALL ASLEEP IN 60 SECONDS" | Authority + Spezifik + Konkretes Outcome |
+| "ELITE PERFORMERS WAKE AT 4:30 AM — BUT THE REAL SECRET IS WHAT THEY DO BEFORE 5 AM" | Curiosity-Gap + Authority + Versprechen |
+| "120 WOMEN, 8 WEEKS, 1 SUPPLEMENT — RESULTS BEAT FLUOXETINE" | Pure Spezifik (Studien-Daten) |
+| "YOUR MOTHER'S CELLS NEVER LEFT YOUR BODY — HERE'S WHAT THAT MEANS" | Schock-Aussage + Curiosity-Gap |
+
+### 32.5 H1 + H2 Hook-Pattern (das was wir bauen sollen)
+
+**Pattern: H1 = Setup (kurze provokante Aussage), H2 = Payoff Promise (was du im Carousel lernst)**
+
+```python
+# RICHTIG — Setup + Payoff Promise:
+"headline_parts": [
+    ("4 AM CLUB", "primary"),
+    (" — REAL SECRET", "white"),
+],
+"subhead_parts": [
+    ("THE 3-PART POWER PROTOCOL ELITE PERFORMERS USE", "white"),
+    (" BEFORE THE WORLD WAKES UP", "regular"),
+],
+```
+
+```python
+# FALSCH — nur generischer Titel ohne Promise:
+"headline_parts": [
+    ("THE 4 AM ADVANTAGE", "white"),  # zu vage
+],
+"subhead_parts": None,  # H2 fehlt komplett — Hook stirbt
+```
+
+**REGEL**: 
+- **H1 alleine ist NIE genug** außer er ist extrem provokant ("YOU'RE DYING SLOWER THAN YOU THINK")
+- **H2 ist meist Pflicht** um den Hook zu zementieren ("HERE'S WHY" / "BACKED BY 5 STUDIES" / "THE PROTOCOL INSIDE")
+
+### 32.6 Hook-Test (vor jedem Post)
+
+Bevor ein Post live geht, frag dich:
+1. Würde **ein Stranger im Feed** das in 2 Sekunden klicken?
+2. Erzeugt H1+H2 zusammen einen **Curiosity-Gap** (= "ich MUSS wissen was im Carousel ist")?
+3. Gibt es **mindestens 1 Spezifik** (Zahl, Name, Studie, Mechanismus)?
+4. Wird **klar gemacht was der Reader bekommt** wenn er swipt?
+
+Wenn 1 davon "nein" → Hook neu schreiben.
+
+### 32.7 Hook-Templates (für Gemini im System-Prompt erzwingen)
+
+Erweiter slide_planner.py System-Prompt mit:
+
+```
+HOOK MANDATE FOR HERO SLIDE (slide 1):
+The H1 + H2 must form a strong hook. Required:
+- H1 must contain at least ONE specific number, name, or concrete term (NEVER pure abstract concepts).
+- H2 must promise WHAT the reader learns by swiping (the payoff).
+- Together they must trigger curiosity-gap or shock.
+- BAD examples to AVOID: "morning routine tips", "the X advantage", "benefits of Y", "why you should Z"
+- GOOD pattern: "[NUMBER] + [SPECIFIC ACTION/PROCESS] + [SHOCKING/CURIOSITY OUTCOME]"
+
+Examples of MANDATORY hook quality:
+✅ H1: "72 HOURS WITHOUT FOOD" / H2: "WHAT IT DOES TO YOUR BODY WILL SHOCK YOU"
+✅ H1: "ELITE PERFORMERS WAKE AT 4:17 AM" / H2: "BUT THE REAL SECRET IS THE 3-PART PROTOCOL THEY USE BEFORE 5 AM"
+✅ H1: "NOBEL PRIZE 2016" / H2: "THE PROCESS YOUR CELLS START AT HOUR 24 OF FASTING"
+
+If you can't write a strong hook in this format, REPHRASE the topic until you can.
+```
+
+### 32.8 Wichtige Don'ts
+
+- ❌ Generic "THE [X] [Y]" Pattern ohne Substanz
+- ❌ Reine Topic-Aussage ("Healthy Eating", "Better Sleep")
+- ❌ Clickbait OHNE Wahrheit ("This will change your life forever") — IG erkennt das, downranked
+- ❌ H1 alleine ohne H2 wenn H1 < 5 Wörter
+- ❌ Fragen als Hook ("DO YOU KNOW...?") — funktioniert selten, zu kommune
+- ❌ Buzzwords-Stapelung ("MAXIMIZE YOUR POTENTIAL UNLOCK YOUR POWER") — leer
+
+### 32.9 Connection zum slide_planner.py
+
+Der Hook-Mandate aus 32.7 MUSS in den System-Prompt von `slide_planner.py` einfließen, sonst generiert Gemini weiter Generic-Hooks. Die Stelle:
+
+```python
+SYSTEM_PROMPT = """...existing...
+
+## HOOK MANDATE FOR HERO SLIDE (slide 1):
+[Inhalt aus 32.7]
+"""
+```
+
+---
+
 **Ende des Handover-Guides**. Bei Fragen: User direkt fragen, NICHT raten.
+
+**WICHTIG für neuen Claude**: 
+- Lies diesen Guide KOMPLETT vor erster Aktion (besonders Sektion 31 — Fehler-Bibel!)
+- Frag den User die Punkte aus Sektion 8
+- Halte dich an Style-Bibel (Sektion 17 + 17.9 exakte Zahlen)
+- Nutze NUR die NEUE Instagram-API (Sektion 26)
+- Bei API-Fehlern IMMER Fallbacks nutzen (Sektion 28)
+- Text-Hierarchie H1/H2/Description/CTA strikt befolgen (Sektion 29)
+- HTML/CSS/Playwright-Setup 1:1 wie in Sektion 30 — keine Abweichungen
+- **Fehler-Bibel (Sektion 31) als Lookup nutzen** wenn was schiefgeht — niemals raten
+- **Hook-Regeln (Sektion 32) auf JEDEN Post anwenden** — schwacher Hook = Post stirbt
