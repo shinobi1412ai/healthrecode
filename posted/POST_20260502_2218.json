@@ -13,5 +13,8 @@
     "https://res.cloudinary.com/dzpo48ngf/image/upload/v1777760356/medical-insta/medical_20260502_2218_slide_7.png",
     "https://res.cloudinary.com/dzpo48ngf/image/upload/v1777760356/medical-insta/medical_20260502_2218_slide_8.png"
   ],
-  "generated_at": "2026-05-02T22:19:17.232528"
+  "generated_at": "2026-05-02T22:19:17.232528",
+  "instagram_status": "posted: 17970198324024168",
+  "facebook_status": "fb_error: photo 1 failed: 403 {\"error\":{\"message\":\"(#200) The permission(s) pages_manage_posts are not available. It could because either they are deprecated or need to be approved by App Review.\",\"type\":\"OAuthException\",\"code\":20",
+  "posted_at": "2026-05-02T22:23:52.004674"
 }
