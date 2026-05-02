@@ -24,6 +24,9 @@ on:
     - cron: "0 8 * * *"   # 09/10 Uhr DE — Morgen-Post
     - cron: "0 16 * * *"  # 17/18 Uhr DE — Abend-Post
 
+permissions:
+  contents: write
+
 jobs:
   post:
     runs-on: ubuntu-latest
@@ -34,6 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -69,6 +73,12 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "github-actions"
-          git add queue/*.json posted/*.json 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "Posted from queue $(date -u +%Y-%m-%d-%H%M)"
-          git push || true
+          mkdir -p queue posted
+          git add -A queue/ posted/ 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Posted from queue $(date -u +%Y-%m-%d-%H%M)"
+          git push
+          echo "=== push successful ==="

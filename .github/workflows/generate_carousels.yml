@@ -25,6 +25,9 @@ on:
     # 02:00 UTC = 3 AM CET / 4 AM CEST
     - cron: "0 2 * * *"
 
+permissions:
+  contents: write
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -35,6 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -97,14 +101,35 @@ jobs:
             done
           fi
 
+      - name: Debug — show queue contents
+        if: always()
+        run: |
+          echo "=== queue/ directory ==="
+          ls -la queue/ || echo "queue/ doesn't exist"
+          echo ""
+          echo "=== output/ directory ==="
+          ls -la output/ 2>/dev/null | head -20 || echo "output/ doesn't exist"
+          echo ""
+          echo "=== git status ==="
+          git status
+
       - name: Commit queue + topics + summary
         if: success()
         run: |
           git config user.email "actions@github.com"
           git config user.name "github-actions"
-          git add topics.txt queue/*.json output/summary_*.json 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "Auto-generate $(date -u +%Y-%m-%d) — added to queue"
-          git push || true
+          mkdir -p queue output
+          git add -A topics.txt queue/ output/summary_*.json 2>/dev/null || true
+          echo "=== staged files ==="
+          git diff --staged --name-only
+          if git diff --staged --quiet; then
+            echo "Nothing to commit — queue is empty?"
+            exit 0
+          fi
+          git commit -m "Auto-generate $(date -u +%Y-%m-%d) — added to queue"
+          echo "=== pushing ==="
+          git push
+          echo "=== push successful ==="
 
       - name: Upload artifacts
         if: always()
