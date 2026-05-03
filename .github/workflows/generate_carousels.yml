@@ -86,6 +86,14 @@ jobs:
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           EOF
 
+      - name: Auto-refill topics (aggressive — keep buffer at 100)
+        run: |
+          # Marwan will NULL manuelle Pflege:
+          # - Wenn topics.txt < 50: AI generiert neu bis 100 erreicht
+          # - Bei jedem Generate-Run gecheckt (also taeglich)
+          # - Exkludiert automatisch bereits gepostete Topics (aus posted/POST_*.json)
+          python refill_topics.py --min 50 --target 100
+
       - name: Generate carousels (uploads to Cloudinary, saves to queue/)
         env:
           TOPIC_OVERRIDE: ${{ github.event.inputs.topic }}
@@ -141,3 +149,35 @@ jobs:
             output/summary_*.json
             queue/*.json
           retention-days: 14
+
+      - name: Send failure email
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "🚨 Auto Run Bug — Generate Carousels failed"
+          to: makevision1412@gmail.com
+          from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
+          body: |
+            ❌ Generate Carousels Workflow ist gescheitert.
+
+            Workflow:    ${{ github.workflow }}
+            Repository:  ${{ github.repository }}
+            Trigger:     ${{ github.event_name }}
+            Branch:      ${{ github.ref_name }}
+            Commit:      ${{ github.sha }}
+
+            🔗 LOG ANSEHEN:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Häufigste Ursachen:
+            • Gemini/Anthropic API down → einfach Run neustarten
+            • Pexels Quota erschöpft → bis Mitternacht warten
+            • Cloudinary Upload-Fehler → Quota check
+            • git push blocked → permissions:contents:write check
+
+            Auto-Pipeline (don't reply)

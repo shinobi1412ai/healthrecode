@@ -82,3 +82,68 @@ jobs:
           git commit -m "Posted from queue $(date -u +%Y-%m-%d-%H%M)"
           git push
           echo "=== push successful ==="
+
+      - name: Send failure email
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "🚨 Auto Run Bug — Post from Queue failed"
+          to: makevision1412@gmail.com
+          from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
+          body: |
+            ❌ Post-from-Queue Workflow ist gescheitert.
+            ⚠️ KRITISCH: Geplanter IG-Post nicht raus — File bleibt in queue/ für Retry.
+
+            Workflow:    ${{ github.workflow }}
+            Repository:  ${{ github.repository }}
+            Trigger:     ${{ github.event_name }}
+            Branch:      ${{ github.ref_name }}
+            Commit:      ${{ github.sha }}
+
+            🔗 LOG ANSEHEN:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Häufigste Ursachen:
+            • IG_USER_ACCESS_TOKEN abgelaufen → refresh_ig_token Workflow manuell starten
+            • IG-Account suspended/restricted → Instagram App checken
+            • FB_PAGE_ACCESS_TOKEN expired → neuen vom Graph Explorer holen
+            • Cloudinary URLs nicht erreichbar → URL manuell testen
+            • IG Container processing ERROR → image_urls validieren
+
+            Manuell retry:
+            • GitHub → Actions → Post from Queue → Run workflow
+            • Falls Token expired: erst refresh_token Workflow, dann post
+
+            Auto-Pipeline (don't reply)
+
+      - name: Send success email (with post details)
+        if: success()
+        continue-on-error: true
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "✅ Auto-Post live — HealthRecode"
+          to: makevision1412@gmail.com
+          from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
+          body: |
+            ✅ Carousel ist live auf Instagram + Facebook!
+
+            🔗 IG-Profile checken:
+            https://www.instagram.com/healthrecode/
+
+            Workflow-Run (für Details):
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Posted-Files (mit IG/FB-IDs):
+            ${{ github.server_url }}/${{ github.repository }}/tree/main/posted
+
+            Auto-Pipeline (don't reply)

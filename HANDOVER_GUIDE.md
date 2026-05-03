@@ -3122,3 +3122,697 @@ Mit dieser Checklist + dem Pipeline-Render-Fix (39.5) + den Process-Lessons (M1-
 - **Style-Bible (Sektion 36)** — alle Pixel/Fonts/CSS für H1/H2/Description/Logo/Vitals/Swipe/Outro/Profile-Card direkt zum Copy-paste
 - **Caption CTA (Sektion 37)** — JEDE Caption muss mit Save/Share/Follow/Don't-forget enden (bevor Hashtags)
 - **Forever-Token (Sektion 38)** — Auto-Refresh alle 50 Tage ODER FB Page Token (nie abläuft) — KEIN manueller Refresh mehr
+- **Auto Topic Refill (Sektion 40)** — `refill_topics.py` läuft VOR jedem Generate; topics.txt < 15 → AI füllt auf 50 auf (Gemini Primary, Anthropic Fallback)
+- **New Brand Setup (Sektion 41)** — Step-by-Step Checklist für jedes neue Brand (IG-Account → FB-Page → Tokens → GitHub Secrets via gh CLI)
+- **API Strategy (Sektion 42)** — Was MUSS pro Brand neu sein vs was bleibt geteilt; Limits-Math für 10 Brands × 4 Carousels/Tag
+- **FB Forever Token (Sektion 43)** — `get_forever_fb_token.py` Script + komplette UI-Walkthrough (Deutsche Meta-UI hat Eigenheiten)
+- **Email Alerts (Sektion 44)** — Gmail SMTP Setup, App-Password, Failure-Email-Templates, Success-Email für Posts
+- **gh CLI Workflow (Sektion 45)** — Alle Setup-Steps via Command-Line statt Browser-Klicken (Marwan bevorzugt das stark)
+- **Bug-Log dieser Session (Sektion 46)** — Bugs #45-52 mit Root-Cause + Fix
+- **Volume Math (Sektion 47)** — Mit aktueller Single-Account-Strategie skaliert die Pipeline auf 100+ Carousels/Tag ohne Limits zu reißen
+
+---
+
+## 40. 🤖 AUTO TOPIC REFILL — Topics.txt füllt sich selbst
+
+**Problem (war):** Marwan musste manuell `topics.txt` mit 50+ Topics pflegen. Wenn die Liste leer wurde → Pipeline crashed.
+
+**Lösung (jetzt):** `refill_topics.py` läuft **VOR jedem Generate-Run** im GitHub Actions Workflow. Wenn `topics.txt` weniger als 15 Einträge hat, wird via Gemini AI automatisch auf 50 aufgefüllt.
+
+### 40.1 Wie es funktioniert
+
+1. **Pre-Check**: `python refill_topics.py --min 15 --target 50`
+2. **Liest**: aktuelles `topics.txt` + alle bereits geposteten Topics aus `posted/POST_*.json`
+3. **Wenn zu wenig**: AI generiert N neue medizinische Topics
+4. **Dedupe**: case-insensitive gegen alle bereits-genutzten Topics
+5. **Schreibt zurück**: aktualisierte `topics.txt` ans Repo (wird im selben Workflow-Step committed)
+
+### 40.2 Quality-Bar im SYSTEM_PROMPT
+
+Jedes Topic muss:
+- SPECIFIC sein (nicht "be healthy", sondern "Cortisol's 90-minute morning window controls your day")
+- MECHANISM-DRIVEN (das WIE, nicht nur das WAS)
+- HOOK-WORTHY (Zahlen, Hormone, Körpersysteme, Forschungsergebnisse)
+- NICHE: medizinisch/biologisch/anatomisch — KEIN generisches Wellness-Bla
+
+### 40.3 Kategorien-Rotation (10 Buckets)
+
+Damit der Content abwechslungsreich bleibt, rotiert AI über:
+1. Hormones (cortisol, insulin, dopamine, testosterone, estrogen, melatonin, leptin, ghrelin)
+2. Organs & Systems (liver detox, gut microbiome, brain plasticity, lymph)
+3. Sleep & Circadian
+4. Fasting & Metabolism (autophagy, ketosis, mTOR)
+5. Nutrition Science (vitamin/mineral mechanisms)
+6. Neuro & Mental (anxiety, focus, depression biology)
+7. Exercise Physiology
+8. Aging & Longevity (telomeres, NAD+, senescence)
+9. Stress Physiology (HPA axis, vagal tone)
+10. Women's Health (cycle phases, perimenopause)
+
+### 40.4 Workflow-Integration (DOPPELTES Safety-Net)
+
+**Layer 1 — Pre-Check vor Generate** (täglich, in `generate_carousels.yml`):
+
+```yaml
+- name: Auto-refill topics (aggressive — keep buffer at 100)
+  run: |
+    python refill_topics.py --min 50 --target 100
+
+- name: Generate carousels ...
+```
+
+**Layer 2 — Wöchentlicher Standalone-Refill** (in `refill_topics.yml`):
+
+Läuft jeden Sonntag 01:00 UTC zusätzlich, falls Layer 1 mal failed. Cron: `0 1 * * 0`. Pushst topics.txt zurück ins Repo + sendet Email-Alert wenn fail.
+
+**Defaults sind aggressive** (Marwan will NULL manuelle Pflege):
+- `--min 50` (refilled wenn unter 50 Topics)
+- `--target 100` (auf 100 auffüllen — großer Buffer)
+
+**Memory-Reminder für zukünftige Claude:** Wenn der User sagt "auch ab 50 soll es nachfüllen" → Defaults sind bereits 50/100 (aggressive). Nicht zurück auf 15/50 ändern!
+
+### 40.5 Manueller Override
+
+```bash
+# Sofort auf 100 auffüllen (auch wenn schon viele drin sind):
+python refill_topics.py --force --target 100
+
+# Höhere Schwelle (wenn 30 Brands gleichzeitig laufen):
+python refill_topics.py --min 50 --target 200
+```
+
+### 40.6 Was bei einem neuen Brand angepasst werden muss
+
+`refill_topics.py` hat einen `SYSTEM_PROMPT` der für **HealthRecode (Medical/Health)** geschrieben ist. Bei einem neuen Brand mit anderer Niche:
+
+1. Kopiere `refill_topics.py` zu `brands/<brand>/refill_topics.py` (oder pass es im Multi-Tenant-Refactor an `brand` parameter an)
+2. Update den SYSTEM_PROMPT mit:
+   - Brand-Audience (Alter, Interessen)
+   - Niche-spezifische Categorien (z.B. für FitnessBrand: Strength Training, Endurance, Mobility, Recovery, Nutrition for Athletes, etc.)
+   - Beispiele guter/schlechter Topics für diese Niche
+
+---
+
+## 41. 🏗️ NEW BRAND SETUP CHECKLIST — Step-by-Step für jedes neue Brand
+
+**Wenn der User sagt "neuer Brand X", führst du ihn EXAKT diese Schritte durch.** Pro neuem Brand 30-45 Min Setup, Rest läuft autonom.
+
+### 41.1 PRE-FLIGHT (vor dem ersten Schritt)
+
+Du fragst den User:
+1. **Brand-Name?** (z.B. "FitLearn", "NutritionCode")
+2. **Niche?** (1 Satz Beschreibung — bestimmt Content-Stil)
+3. **Brand-Farbe?** (Hex-Code für Akzent, z.B. cyan #00CFE8 für HealthRecode)
+4. **Logo vorhanden?** (oder soll ich generieren?)
+5. **Existierender IG-Account oder neuer?** (siehe 41.2 Warm-Up Strategie)
+6. **Existierende FB-Page oder neue?** (1 IG = 1 FB-Page Pflicht)
+
+### 41.2 Warm-Up vs sofortige Automation
+
+⚠️ **KRITISCH:** Neue oder lange inaktive IG-Accounts dürfen NICHT sofort auto-posten — Meta flaggt sie als Bot/Spam → Shadowban oder Ban.
+
+**Empfohlene Reihenfolge (immer):**
+
+| Woche | Action | Posting-Modus |
+|---|---|---|
+| **1** | Profil-Update (Bio, Foto, Highlights, 3-5 Stories) + 3-4 manuelle Posts vom Handy | Manuell (vom Handy) |
+| **2** | 1 manueller Post + 1 API-Post pro Tag (Pipeline-Test ohne Risiko) | Mix |
+| **3+** | Volle Automation 2-4×/Tag via Pipeline | API |
+
+**Bei einem Account der "ein paar Jahre alt" ist + 0 Posts:** GENAU dieselbe Warm-Up-Strategie. Alter ist OK aber plötzliche Aktivität ohne Warm-Up = Spam-Flag.
+
+### 41.3 Step 1 — Instagram Account vorbereiten
+
+1. Im IG-App login (mit dem gewünschten Account)
+2. Settings → Account type and tools → **Switch to professional account** → wähle **Creator** oder **Business**
+3. Profil-Update: Name, Bio, Profilbild (cyan/brand-color icon), Link
+4. Edit Profile → **Page** → Connect to existing FB Page → wähle die Brand-FB-Page (oder erstelle eine neue)
+
+**Falls keine FB-Page existiert:** vor diesem Schritt FB-Page erstellen unter `https://www.facebook.com/pages/create`
+
+### 41.4 Step 2 — Meta App Setup (1× pro Brand-Cluster, kann shared sein)
+
+**Wichtig:** EIN Meta-App reicht für ALLE Brands. Du musst nicht pro Brand eine neue App erstellen.
+
+Wenn schon eine App existiert (z.B. die HealthRecode-App):
+- Nichts machen — gleiche `FB_APP_ID` + `FB_APP_SECRET` für alle Brands nutzen
+
+Wenn keine App existiert:
+1. `https://developers.facebook.com/apps` → **Create App**
+2. Use Case wählen: **"Other"** → Type: **Business**
+3. Name: `MultiContentPipeline` oder ähnlich
+4. **Settings → Basic** → App ID + App Secret kopieren
+5. Use Cases hinzufügen:
+   - **Instagram API with Instagram Login** (für IG)
+   - **Manage everything on your Page** (für FB-Posting)
+6. App-Mode: **"In Development"** lassen (nicht Live setzen — Live braucht App Review)
+7. Add Roles: dich selbst als Admin/Tester (Settings → Roles)
+
+### 41.5 Step 3 — IG-Token holen
+
+1. `https://developers.facebook.com/tools/explorer/`
+2. Meta-App Dropdown → wähle deine App
+3. User or Page → "Get User Access Token"
+4. Permissions adden:
+   - `instagram_business_basic`
+   - `instagram_business_content_publish`
+   - `instagram_business_manage_messages`
+   - `instagram_business_manage_comments`
+5. **Generate Access Token** → mit dem Account einloggen (NICHT dem Brand-Account, sondern dem Meta-Admin-Account)
+6. **Wichtig:** im Permission-Popup wird gefragt, welche IG-Accounts/Pages → wähle den Brand
+7. Token im Feld kopieren (User Token, Short-Lived 1h)
+8. Im Dropdown auf "**\<Brand-IG-Name\>**" wechseln (unter "Instagram Accounts")
+9. Token im Feld ist jetzt der **IG_USER_ACCESS_TOKEN**
+10. URL-Bar: `me?fields=id` → Senden → die zurückgegebene `id` ist die **IG_USER_ID**
+
+**Long-Lived Token holen (60 Tage statt 1h):**
+
+```bash
+curl "https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=<APP_SECRET>&access_token=<SHORT_TOKEN>"
+```
+
+→ Returns Long-Lived Token. Auto-Refresh läuft via `refresh_ig_token.yml` Workflow alle 50 Tage = NIE abgelaufen.
+
+### 41.6 Step 4 — FB Forever Page Token holen (siehe Sektion 43)
+
+Run `python get_forever_fb_token.py`:
+- App-ID + App-Secret eingeben (gleich für alle Brands)
+- User Token aus Graph Explorer eingeben
+- Im Output: `FB_PAGE_ID = ...` + `FB_PAGE_ACCESS_TOKEN = ...` (Forever)
+- Script schreibt automatisch in GitHub Secrets via gh CLI
+
+### 41.7 Step 5 — GitHub Secrets setzen (via gh CLI)
+
+```powershell
+$BRAND = "fitlearn"  # oder welches neue Brand
+
+# Brand-spezifisch
+echo "<IG_USER_ID>" | gh secret set "IG_USER_ID_${BRAND}".ToUpper() --repo shinobi1412ai/healthrecode
+echo "<IG_TOKEN>" | gh secret set "IG_USER_ACCESS_TOKEN_${BRAND}".ToUpper() --repo shinobi1412ai/healthrecode
+echo "<FB_PAGE_ID>" | gh secret set "FB_PAGE_ID_${BRAND}".ToUpper() --repo shinobi1412ai/healthrecode
+echo "<FB_TOKEN>" | gh secret set "FB_PAGE_ACCESS_TOKEN_${BRAND}".ToUpper() --repo shinobi1412ai/healthrecode
+
+# Geteilt (1× setzen, dann nicht mehr ändern):
+# GEMINI_API_KEY, ANTHROPIC_API_KEY, PEXELS_API_KEY, TOGETHER_API_KEY,
+# CLOUDINARY_*, FB_APP_ID, FB_APP_SECRET, SMTP_USER, SMTP_PASS
+```
+
+### 41.8 Step 6 — Brand-Config
+
+`brands/<brand>/config.yaml`:
+```yaml
+name: FitLearn
+ig_handle: fitlearn
+brand_color: "#FF6B35"   # orange für Fitness
+secondary_color: "#0A1F33"
+logo_path: brands/fitlearn/logo.png
+font_main: Bebas Neue
+font_body: Plus Jakarta Sans
+caption_voice: "energetic, action-oriented, gym-bro friendly"
+```
+
+`brands/<brand>/topics.txt` — initial 5-10 Topics (rest wird via Auto-Refill aufgefüllt)
+
+### 41.9 Step 7 — Test + Live
+
+```powershell
+# 1. Generate-Workflow manuell triggern (mit count=1)
+gh workflow run generate_carousels.yml --field brand=$BRAND --field count=1 --repo shinobi1412ai/healthrecode
+
+# 2. ~6 Min warten, dann Status:
+gh run list --repo shinobi1412ai/healthrecode --workflow=generate_carousels.yml --limit 1
+
+# 3. Wenn grün: Post-Workflow triggern
+gh workflow run post_from_queue.yml --field brand=$BRAND --repo shinobi1412ai/healthrecode
+
+# 4. ~3 Min warten, dann Log:
+$RUN_ID = gh run list --repo shinobi1412ai/healthrecode --workflow=post_from_queue.yml --limit 1 --json databaseId --jq ".[0].databaseId"
+gh run view $RUN_ID --log | Select-String "Status"
+
+# Erwartet:
+# IG Status: posted: <id>
+# FB Status: fb_posted: <id>
+```
+
+---
+
+## 42. 🔑 API ACCOUNT STRATEGY — Shared vs Per-Brand
+
+**Goldene Regel:** Was kann shared bleiben? Alles was kein Account-spezifisches Limit hat. Was muss neu sein? IG- und FB-Account selbst (sind brand-defining).
+
+### 42.1 Per-Brand NEU (Pflicht)
+
+| Item | Warum | Wo zu holen |
+|---|---|---|
+| **Instagram Account** | 1 IG = 1 Brand | manuell in IG-App erstellen + Business-Modus |
+| **Facebook Page** | 1 FB-Page = 1 IG-Account (für IG ↔ FB Verknüpfung) | facebook.com/pages/create |
+| **IG_USER_ID** | identifiziert IG-Account in Graph API | Graph Explorer: `me?fields=id` mit IG-Account ausgewählt |
+| **IG_USER_ACCESS_TOKEN** | 60-Tage-Token, alle 50 Tage auto-refresht | Graph Explorer → Long-Lived-Exchange |
+| **FB_PAGE_ID** | identifiziert FB-Page | aus Page-URL oder Graph Explorer |
+| **FB_PAGE_ACCESS_TOKEN** | Forever-Token (nie expired) | `get_forever_fb_token.py` Script |
+
+### 42.2 Geteilt (1× setzen, gilt für alle Brands)
+
+| Item | Warum geteilt | Free-Tier-Limit | Verbrauch bei 10 Brands × 4/Tag |
+|---|---|---|---|
+| **GEMINI_API_KEY** | 1500 Reqs/Tag free | 1500/Tag | 40 Reqs/Tag = 2,7% |
+| **ANTHROPIC_API_KEY** | Pay-as-you-go, ~$0.001/Plan | unbegrenzt | $0.04/Tag = $1.20/Monat |
+| **PEXELS_API_KEY** | 200 Reqs/h, 20k/Monat | 20k/Monat | 240 Reqs/Tag = 7200/Monat = 36% |
+| **TOGETHER_API_KEY** | Pay-as-you-go, $0.04/Bild | unbegrenzt | 40 Bilder/Tag = $1.60/Tag = $48/Monat |
+| **CLOUDINARY_*** | 25GB Storage Free | 25GB | 320 PNGs/Tag × 90 Tage × 500KB = 14GB → in Limit |
+| **FB_APP_ID + FB_APP_SECRET** | EIN Meta-App reicht für alle Brands | unbegrenzt | egal |
+| **ANTHROPIC_API_KEY** (caption fallback) | siehe oben | siehe oben | siehe oben |
+| **SMTP_USER + SMTP_PASS** | 1 Gmail App-Password für Failure-Alerts | unbegrenzt | egal |
+
+### 42.3 Anti-Patterns (NICHT TUN)
+
+❌ **Mehrere Gemini Accounts**: gegen Google ToS (siehe Sektion 47.4) → Total-Ban-Risiko
+❌ **Mehrere FB Apps pro Brand**: unnötig, App ist neutral, nur Pages sind brand-spezifisch
+❌ **Mehrere Cloudinary Accounts**: 25GB pro Account reicht; ggf. Brand-Folder nutzen (`folder=fitlearn/` im Upload)
+❌ **Mehrere Pexels API Keys**: 20k/Monat reicht für 30+ Brands
+
+### 42.4 Wenn ein API-Limit doch reißt
+
+| Limit erreicht | Option 1 | Option 2 |
+|---|---|---|
+| Gemini 1500/Tag | Anthropic-Fallback (schon implementiert) | Upgrade auf Pay-as-you-go ($0.075/1M tokens, vernachlässigbar) |
+| Pexels 200/h | Spread Generation über 1h (nicht alle 10 Brands gleichzeitig) | Pixabay-Fallback (schon implementiert) |
+| Cloudinary 25GB | Retention auf 60 Tage senken | Pay-as-you-go ($1/GB Bandbreite) |
+| Together AI Cost | Switch zu Pollinations.ai (free, niedrigere Quali) für niedrig-Priority Brands | — |
+
+---
+
+## 43. ♾️ FB FOREVER PAGE TOKEN — Komplette Anleitung mit deutscher UI
+
+**Was ist das:** Ein FB Page Access Token der NIE abläuft. Wird derived von einem Long-Lived User Token. Solange dein FB-Account selbst nicht gelöscht/gesperrt wird, läuft der Page-Token forever.
+
+### 43.1 Voraussetzungen
+
+- FB-Page existiert + ist mit IG-Account verknüpft
+- Meta-App existiert (siehe Sektion 41.4) im "In Development" Mode
+- Du bist Admin der App + der FB-Page
+
+### 43.2 Permissions die der User Token haben muss
+
+Im Graph API Explorer **bevor "Generate Access Token"** musst du diese Permissions adden:
+
+1. `pages_show_list` — Pages auflisten
+2. `pages_read_engagement` — Engagement-Daten lesen
+3. **`pages_manage_posts`** ← ⚠️ **OFT VERGESSEN!** Ohne diese: Cross-Post failed mit `(#200) The permission(s) pages_manage_posts are not available`
+4. `pages_manage_metadata` — Page-Metadaten
+
+### 43.3 Deutsche UI-Eigenheiten (Marwan-spezifische Gotchas)
+
+Wenn der User die deutsche Meta-UI nutzt:
+
+| Englisch | Deutsch | Wo zu finden |
+|---|---|---|
+| User or Page | Nutzer oder Seite | rechtes Panel mittig |
+| Get User Access Token | Nutzer-Zugriffstoken anfordern | Dropdown im "Nutzer oder Seite" |
+| Page Access Tokens | Seiten-Zugriffstokens | unten im Dropdown |
+| Add a Permission | Berechtigung hinzufügen | unten im Permissions-Block |
+| Generate Access Token | Generate Access Token (bleibt englisch!) | großer blauer Button |
+| App Settings → Basic | App-Einstellungen → Allgemeines | linkes App-Menü |
+
+⚠️ **Häufige Verwirrung:** Wenn der User die "neue Meta Use Cases UI" hat (Dashboard mit grünen Haken-Liste), nicht die alte Permissions-UI:
+- Use Case "Alles auf deiner Seite verwalten" enthält automatisch `pages_manage_posts` + `pages_show_list` + `pages_read_engagement`
+- Wenn dieser Use Case grünen Haken hat → Permissions sind verfügbar im Graph Explorer
+
+### 43.4 Script: get_forever_fb_token.py
+
+Liegt im Repo-Root. Was es macht:
+
+1. Fragt interaktiv `FB_APP_ID`, `FB_APP_SECRET` (falls nicht in .env)
+2. Fragt nach **User Token** (NICHT Page Token!) aus Graph Explorer
+3. Tauscht Short-Lived → Long-Lived User Token (60 Tage) via `oauth/access_token?grant_type=fb_exchange_token`
+4. Holt aus `/me/accounts` die Pages + deren Page-Tokens (forever, weil derived von Long-Lived)
+5. Wenn `gh` CLI installiert ist: schreibt direkt `FB_PAGE_ID` + `FB_PAGE_ACCESS_TOKEN` in GitHub Secrets
+6. Falls `gh` nicht installiert: gibt Tokens auf Console aus, User trägt manuell ein
+
+### 43.5 Häufige Fehler beim Forever-Token-Holen
+
+| Fehler | Root Cause | Fix |
+|---|---|---|
+| `Tried accessing nonexisting field (accounts)` | User hat **Page Token** ans Script gegeben statt User Token | Im Graph Explorer Dropdown auf "Nutzertoken" wechseln, dann Token kopieren |
+| `(#200) pages_manage_posts not available` | User Token wurde ohne `pages_manage_posts` Permission generiert | Im Graph Explorer Permission adden + Token NEU generieren |
+| `OAuthException 190` | App ID oder App Secret falsch | Settings → Basic in Meta App, beide Werte neu kopieren |
+| Token works but FB-Post failed `code 200` | Page Token hat nicht ALLE Permissions vom User Token geerbt | User Token mit ALLEN 4 Permissions neu generieren |
+| Mehrere Pages erscheinen | User ist Admin von mehreren Pages | Script fragt interaktiv welche → User wählt Brand |
+
+### 43.6 Forever-Token testen
+
+```python
+import requests
+TOKEN = "EAA..."  # dein neuer Forever Page Token
+PAGE_ID = "..."  # deine FB_PAGE_ID
+
+# Test 1: Token gültig?
+r = requests.get(f"https://graph.facebook.com/v21.0/{PAGE_ID}",
+    params={"fields": "id,name", "access_token": TOKEN})
+print(r.json())  # sollte {"id": "...", "name": "...", "id": "..."}
+
+# Test 2: Permissions OK?
+r = requests.get(f"https://graph.facebook.com/v21.0/{PAGE_ID}/feed?limit=1",
+    params={"access_token": TOKEN})
+print(r.status_code)  # sollte 200
+```
+
+---
+
+## 44. 📧 EMAIL FAILURE ALERTS — Gmail SMTP Setup
+
+**Was:** Bei Workflow-Fail kommt eine Email zu `makevision1412@gmail.com` mit Subject `🚨 Auto Run Bug — \<workflow\>` und direktem Log-Link. Bei erfolgreichen Posts kommt `✅ Auto-Post live`.
+
+### 44.1 Setup (1×)
+
+1. **Gmail 2FA aktivieren** (falls noch nicht): `https://myaccount.google.com/security`
+2. **App-Password generieren**: `https://myaccount.google.com/apppasswords`
+   - App name: `HealthRecode Pipeline`
+   - Create → 16-stelligen Code kopieren (Format: `xxxx xxxx xxxx xxxx`)
+   - **Leerzeichen entfernen** beim Pasten → 16 Buchstaben am Stück
+3. **GitHub Secrets** (via gh CLI):
+   ```powershell
+   echo "makevision1412@gmail.com" | gh secret set SMTP_USER --repo shinobi1412ai/healthrecode
+   echo "DEIN_APP_PASSWORD" | gh secret set SMTP_PASS --repo shinobi1412ai/healthrecode
+   ```
+
+### 44.2 Email-Templates (in Workflows)
+
+Alle 3 Workflows haben einen `dawidd6/action-send-mail@v3` Step:
+
+**Generate Carousels** — bei Fail:
+```yaml
+- name: Send failure email
+  if: failure()
+  uses: dawidd6/action-send-mail@v3
+  with:
+    server_address: smtp.gmail.com
+    server_port: 465
+    secure: true
+    username: ${{ secrets.SMTP_USER }}
+    password: ${{ secrets.SMTP_PASS }}
+    subject: "🚨 Auto Run Bug — Generate Carousels failed"
+    to: makevision1412@gmail.com
+    from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
+    body: |
+      ❌ Generate Carousels Workflow ist gescheitert.
+      Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      Häufigste Ursachen: Gemini/Anthropic API down, Pexels Quota, Cloudinary, git push permissions
+```
+
+**Post from Queue** — bei Fail UND bei Success:
+- Failure-Subject: `🚨 Auto Run Bug — Post from Queue failed`
+- Success-Subject: `✅ Auto-Post live — HealthRecode`
+
+**Refresh Token** — KRITISCH falls fail:
+- Subject: `🚨 Auto Run Bug — IG Token Refresh failed (KRITISCH)`
+- Body warnt vor dem 10-Tage-Buffer bevor Token expired
+
+### 44.3 Was die Failure-Email enthält
+
+- Workflow-Name, Repository, Trigger, Branch, Commit
+- **Direkter Link** zum Run-Log (klickbar)
+- **Häufigste Ursachen** mit konkreten Fixes (zur Selbsthilfe ohne Claude)
+- **Manueller Retry** Anleitung (z.B. "Gehe zu GitHub → Actions → Run workflow")
+
+### 44.4 Email-Spam vermeiden
+
+Failure-Emails haben `if: failure()` — nur wenn Workflow rot wird.
+Success-Emails haben `if: success()` — bei jedem grünen Post.
+**Bei 4 Posts/Tag = 4 Success-Emails/Tag.** Falls zu viel, einfach den Success-Step entfernen oder auf "alle 7 Tage Summary" ändern (Future-Improvement).
+
+---
+
+## 45. 💻 gh CLI WORKFLOW — Alles ohne UI-Klicken
+
+**User-Präferenz (siehe Memory):** Marwan will minimum manual UI clicks. Default zu Scripts + gh CLI.
+
+### 45.1 Installation (1×)
+
+```powershell
+winget install GitHub.cli
+# Neues PowerShell öffnen (PATH-Refresh)
+gh auth login
+# Wähle: GitHub.com → HTTPS → Login with web browser
+```
+
+### 45.2 Cheat-Sheet — alle wichtigen Commands
+
+```powershell
+# Secrets setzen (statt UI klicken)
+echo "VALUE" | gh secret set SECRET_NAME --repo shinobi1412ai/healthrecode
+
+# Secrets auflisten (mit Updated-Time)
+gh secret list --repo shinobi1412ai/healthrecode
+
+# Workflow triggern (statt "Run workflow" klicken)
+gh workflow run WORKFLOW.yml --repo shinobi1412ai/healthrecode --field key=value
+
+# Run-Status der letzten 5 Runs
+gh run list --repo shinobi1412ai/healthrecode --limit 5
+
+# Letzte Run-ID eines bestimmten Workflows
+$RUN_ID = gh run list --repo shinobi1412ai/healthrecode --workflow=post_from_queue.yml --limit 1 --json databaseId --jq ".[0].databaseId"
+
+# Log eines Runs (nur Status-Zeilen)
+gh run view $RUN_ID --repo shinobi1412ai/healthrecode --log | Select-String "Status"
+
+# Run abbrechen (wenn er hängt)
+gh run cancel $RUN_ID --repo shinobi1412ai/healthrecode
+
+# Hängenden Workflow live verfolgen
+gh run watch --repo shinobi1412ai/healthrecode
+```
+
+### 45.3 Häufige PowerShell-Fallen
+
+**Problem:** "Die Benennung 'gh' wurde nicht erkannt"
+**Cause:** PATH nicht refresht nach Installation
+**Fix:**
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+Oder: PowerShell schließen + neu öffnen.
+
+**Problem:** Git-Lock blockiert Push (`File exists. Another git process...`)
+**Fix:**
+```powershell
+Remove-Item -Force .git\index.lock -ErrorAction SilentlyContinue
+Remove-Item -Force .git\refs\remotes\origin\main.lock -ErrorAction SilentlyContinue
+```
+
+### 45.4 End-to-End Test eines Brand (komplett gh-CLI):
+
+```powershell
+$BRAND = "healthrecode"
+
+# 1. Generate
+gh workflow run generate_carousels.yml --repo shinobi1412ai/$BRAND --field topic="" --field count=1
+Start-Sleep -Seconds 360
+
+# 2. Status check
+gh run list --repo shinobi1412ai/$BRAND --limit 3
+
+# 3. Post
+gh workflow run post_from_queue.yml --repo shinobi1412ai/$BRAND
+Start-Sleep -Seconds 180
+
+# 4. Final status
+$RUN_ID = gh run list --repo shinobi1412ai/$BRAND --workflow=post_from_queue.yml --limit 1 --json databaseId --jq ".[0].databaseId"
+gh run view $RUN_ID --repo shinobi1412ai/$BRAND --log | Select-String "Status"
+```
+
+---
+
+## 46. 🐛 BUGS DIESER SESSION — #45 bis #52 (Append zur Fehler-Bibel Sektion 31)
+
+### Bug #45 — `(#200) The permission(s) pages_manage_posts are not available`
+
+**Wann:** FB Cross-Post failed obwohl FB_PAGE_ACCESS_TOKEN gesetzt ist
+**Root Cause:** User Token wurde im Graph Explorer ohne `pages_manage_posts` Permission generiert. Dieser Permission ist KEINE Default-Permission und muss explizit added werden bevor "Generate Access Token" geklickt wird.
+**Fix:**
+1. Im Graph Explorer "Berechtigung hinzufügen" → `pages_manage_posts` (+ `pages_show_list`, `pages_read_engagement`, `pages_manage_metadata`)
+2. **NEU "Generate Access Token"** klicken (nicht refreshen — Permission-Set wird nur beim Generate übernommen)
+3. Im Permission-Popup ALLE 4 zustimmen
+4. Dann erst Forever-Token-Script
+**Prevention:** In Sektion 43.2 als Pflicht-Liste dokumentiert; Setup-Checklist Sektion 41 erwähnt es explizit.
+
+### Bug #46 — `Tried accessing nonexisting field (accounts)` (Code 100)
+
+**Wann:** `get_forever_fb_token.py` failed bei Step `[2] Hole Pages + Forever Page Tokens`
+**Root Cause:** User hat **Page Token** ans Script gegeben statt **User Token**. `/me/accounts` Endpoint funktioniert NUR mit User Tokens. Bei Page Tokens ist `/me` = die Page selbst (keine `accounts`-Field).
+**Fix:** Im Graph Explorer Dropdown auf **"Nutzertoken"** wechseln (NICHT auf eine spezifische Page) → dann Token kopieren → ans Script.
+**Prevention:** Script-Output erklärt jetzt klarer "Token einfuegen (NICHT Page Token, sondern User Token aus Dropdown 'Nutzertoken')".
+
+### Bug #47 — Workflow grün, aber `queue/POST_*.json` nicht im Repo
+
+**Wann:** Generate Carousels lief erfolgreich, aber `queue/` auf GitHub bleibt leer (404)
+**Root Cause:** `permissions: contents: write` fehlte im Workflow → GITHUB_TOKEN war read-only → `git push` failed → aber `|| true` versteckte den Error → Workflow grün
+**Fix:**
+```yaml
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true   # ← KRITISCH
+      ...
+      - name: Commit + push
+        run: |
+          # KEIN "|| true" — Errors müssen sichtbar sein
+          git push
+```
+**Prevention:** Beide Workflow-Files (generate + post) haben jetzt `permissions: contents: write` + `persist-credentials: true` + Debug-Step der `ls -la queue/` zeigt vor dem Commit.
+
+### Bug #48 — Gemini malformed JSON crash
+
+**Wann:** `cloud_pipeline.py` failed mit `Expecting ',' delimiter: line 29 column 164`
+**Root Cause:** Gemini gibt manchmal JSON mit trailing commas zurück oder unescaped quotes in Strings (besonders bei langen Captions mit `'s` oder `"don't"`)
+**Fix:** `_parse_json()` in `slide_planner.py` hat jetzt 3-stufiges Fallback:
+1. Strict JSON parse
+2. Trailing-comma cleanup (regex `,\s*[}\]]` → ohne Komma)
+3. `json-repair` Library als finaler Fix für unescaped quotes
+**Prevention:** `requirements.txt` hat `json-repair>=0.30.0` als Dependency. Auch wenn Gemini malformed JSON returned, der Plan wird trotzdem geparsed.
+
+### Bug #49 — `ANTHROPIC_API_KEY fehlt in .env` im GitHub Actions Runner
+
+**Wann:** Anthropic-Fallback failed weil Secret nicht gesetzt war
+**Root Cause:** Workflow schreibt `ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}` ins .env, aber das Secret war nicht in GitHub gesetzt → leerer Wert → Fallback-Crash
+**Fix:** User muss `ANTHROPIC_API_KEY` als GitHub Secret setzen. Mit `gh secret set ANTHROPIC_API_KEY` (Wert von `https://console.anthropic.com/settings/keys`)
+**Prevention:** Setup-Checklist Sektion 41.7 listet ALLE benötigten Secrets explizit auf. Ohne Anthropic ist Pipeline anfälliger; mit Anthropic 100% reliability.
+
+### Bug #50 — `gh` Command nicht erkannt nach `winget install GitHub.cli`
+
+**Wann:** Sofort nach Installation in derselben PowerShell-Session
+**Root Cause:** PATH wird in der laufenden PowerShell-Session nicht aktualisiert; nur neue Sessions sehen den neuen PATH
+**Fix:** PowerShell schließen + neu öffnen ODER manuell PATH refresh:
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+**Prevention:** Nach jeder Installation eines CLI-Tools direkt erwähnen "Bitte PowerShell neu öffnen".
+
+### Bug #51 — Topics.txt manuell pflegen war Bottleneck
+
+**Wann:** Marwan musste regelmäßig 50+ Topics manuell pflegen, sonst Pipeline crashed
+**Root Cause:** Keine Auto-Refill-Logik → topics.txt lief leer → cloud_pipeline.py konnte kein Topic mehr ziehen → exit
+**Fix:** `refill_topics.py` (siehe Sektion 40) läuft VOR jedem Generate. Wenn topics.txt < 15 → Gemini generiert auf 50. Mit Dedupe gegen `posted/` damit keine bereits-genutzten Topics nochmal kommen.
+**Prevention:** Im Workflow als erster Step direkt vor Generate. Bei neuem Brand `refill_topics.py` SYSTEM_PROMPT an Niche anpassen (siehe 40.6).
+
+### Bug #52 — Wrong-token-confusion bei Forever-Token-Setup
+
+**Wann:** User updated `FB_PAGE_ACCESS_TOKEN` mit Token aus Graph Explorer (Short-Lived 1h) statt mit Token aus Script-Output (Forever)
+**Root Cause:** Beide Tokens beginnen mit `EAA...` und sehen optisch ähnlich aus. User dachte Graph Explorer Page Token = Script-Output Page Token.
+**Fix:** Klare Unterscheidung im Guide (Sektion 43.5) + im Script-Output explizit: "Dieser Token expired NIE (derived from Long-Lived User Token). Token aus Graph Explorer wäre Short-Lived und würde nach 1h sterben."
+**Prevention:** Script schreibt jetzt direkt via `gh CLI` ins Secret (wenn verfügbar) — User muss nicht mehr selber zwischen 2 Tokens wählen.
+
+---
+
+## 47. 📊 VOLUME MATH — Wie weit skaliert die aktuelle Architektur?
+
+**Frage:** "10 IG Pages × 3-4 Carousels/Tag — reicht 1 API-Account pro Service?"
+
+**Antwort:** **JA, mit massivem Headroom.** Die aktuelle Single-Account-Strategie reicht für 100+ Brands × 4 Carousels/Tag.
+
+### 47.1 Verbrauch pro Carousel
+
+| API | Calls/Carousel | Cost/Carousel |
+|---|---|---|
+| Gemini Slide-Plan | 1 | $0 (free tier) |
+| Pexels Image Search | 6 (eine pro Content-Slide) | $0 |
+| Together AI Outro Background | 1 | $0.04 |
+| Cloudinary Uploads | 8 (eine pro Slide) | $0 (free tier) |
+| Cloudinary Storage (90 days × 500KB × 8) | persistent | ~$0 |
+| IG API Container + Publish | 10 (8 Children + 1 Carousel + 1 Publish) | $0 |
+| FB API Photos + Album Post | 9 (8 Photos + 1 Album) | $0 |
+
+**Total: $0.04 pro Carousel** (nur Together AI für AI-Background)
+
+### 47.2 Skalierung — Vergleichstabelle
+
+| Setup | Carousels/Tag | Gemini % | Pexels % | Cloudinary % | Cost/Monat |
+|---|---|---|---|---|---|
+| 1 Brand × 2 = 2/Tag (aktuell) | 2 | 0.13% | 1.8%/h | 0.05% | $2.40 |
+| 10 Brands × 4 = 40/Tag | 40 | 2.7% | 36%/h | 1% | $48 |
+| 30 Brands × 4 = 120/Tag | 120 | 8% | rate-limit ⚠️ | 3% | $144 |
+| 100 Brands × 4 = 400/Tag | 400 | 27% | rate-limit ⚠️ | 10% | $480 |
+
+### 47.3 Erste Limits die brechen würden (theoretisch)
+
+**Pexels rate limit (200/h):**
+- 10 Brands × 6 Pexels-calls × 4 Carousels = 240/h wenn ALLE Brands gleichzeitig generieren
+- Fix: Generate-Cron auf 4 Stunden verteilen (matrix mit time-offsets) statt 1 Cron für alle
+- Alternativ: Pixabay-Fallback aktivieren (ist schon implementiert)
+
+**Cloudinary 25GB Storage:**
+- 400 PNGs/Tag × 90 Tage × 500KB = ~17GB
+- Fix: Retention auf 60 Tage senken (12GB) oder Pay-Tier ($1/GB)
+
+**Together AI Cost:**
+- Bei 400 Carousels/Tag = $16/Tag = $480/Monat
+- Optimization: AI-Background nur bei Outro (1× pro Carousel), nicht bei Hero → bleibt bei aktueller Logik
+
+### 47.4 ⚠️ NICHT-OPTIONEN — Multi-Account Anti-Pattern
+
+User-Anfrage: "Kann ich mehrere Gemini-Accounts machen?"
+
+**Antwort: Strikt NEIN.**
+
+Reasons:
+1. **Google ToS Verstoß** (https://policies.google.com/terms): "You may not create multiple accounts to circumvent rate limits"
+2. **Detection-Mechanismen:**
+   - IP-basiert (gleiche IP für mehrere Accounts = Flag)
+   - Browser-Fingerprint
+   - Phone-Verification (1 Nummer = 1 Account)
+   - Payment-Method (1 Card = 1 Account)
+3. **Ban-Risiko:** Wenn Detection greift, werden ALLE deine Accounts gebannt — auch der echte Brand-Account
+4. **Volume-Math:** Sogar 100 Brands × 4 Carousels/Tag = 400 Reqs/Tag, free tier ist 1500 — d.h. **27% Auslastung auf EINEM Account**. Du hättest 3.7× Headroom auf einem einzigen Free-Tier-Account.
+
+**Memory-Reminder:** Wenn der User in Zukunft fragt "kann ich mehrere Gemini-Accounts machen", IMMER nein sagen + Math zeigen + Anthropic-Fallback erwähnen.
+
+### 47.5 Realistic Scaling Plan für Marwan (10+ Brands)
+
+| Brand-Count | Setup-Aufwand | Monthly Cost | Notes |
+|---|---|---|---|
+| 1 (HealthRecode jetzt) | ~6 Stunden | $2.40 | DONE ✓ |
+| 5 | +2.5h pro Brand = 12.5h | $12 | Multi-Tenant Refactor empfohlen |
+| 10 | +12.5h für nächste 5 | $48 | Pexels-Rate-Limit beobachten |
+| 20 | +25h für nächste 10 | $96 | Cron-Spread implementieren |
+| 50+ | +Architektur-Refactor (Queue-Worker statt Cron) | $240+ | Eigenes Server-Setup mit RabbitMQ/Redis |
+
+**Empfehlung Phase-Plan (siehe Memory `project_multi_brand_scaling.md`):**
+- Phase 1 (jetzt): HealthRecode 30+ erfolgreiche Posts
+- Phase 2 (Woche 2-3): Multi-Tenant-Refactor mit `brands/<brand>/config.yaml`
+- Phase 3 (Monat 2): 5 Brands live
+- Phase 4 (Monat 3-4): 10 Brands live
+- Phase 5 (Monat 6+): Video-Pipeline (TikTok/Reels/Shorts)
+
+---
+
+## 48. ✅ FINAL SETUP-CHECKLISTE für neue Brand (Quick-Reference)
+
+Wenn der User sagt "neuer Brand X", führe ihn DIESE Liste durch (ohne lange Diskussion — einfach machen):
+
+```
+[ ] 1. Brand-Name + Niche + Farbe geklärt
+[ ] 2. IG-Account existiert + Business-Modus + FB-Page verknüpft
+[ ] 3. Warm-Up-Strategie geklärt (1 Woche manuell vor Auto)
+[ ] 4. Meta-App reused (1 App reicht für alle Brands)
+[ ] 5. IG_USER_ID + IG_USER_ACCESS_TOKEN via Graph Explorer geholt
+[ ] 6. python get_forever_fb_token.py → FB_PAGE_ID + FB_PAGE_ACCESS_TOKEN (Forever)
+[ ] 7. GitHub Secrets via gh CLI gesetzt (Brand-suffix wenn Multi-Tenant)
+[ ] 8. brands/<brand>/config.yaml mit Brand-Style
+[ ] 9. brands/<brand>/topics.txt mit 5-10 initialen Topics
+[ ] 10. refill_topics.py SYSTEM_PROMPT an neue Niche angepasst (falls anders als Medical)
+[ ] 11. Test-Generate manuell triggern (count=1)
+[ ] 12. Wenn Generate grün: Test-Post manuell triggern
+[ ] 13. IG + FB visuell checken (beide Posts sichtbar)
+[ ] 14. Auto-Cron Schedule überprüfen (verschoben falls Brand andere Zeitzone bedient)
+[ ] 15. Email-Alerts werden empfangen (test mit absichtlichem Fail)
+```
+
+**Wenn alle 15 Haken: Brand ist fully live & autonomous.**
+

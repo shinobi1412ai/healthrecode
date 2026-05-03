@@ -1,0 +1,107 @@
+name: Auto-Refill Topics (Weekly Buffer)
+
+# Laeuft jeden Sonntag um 01:00 UTC (vor dem Cron der Generate-Workflow startet).
+# Stellt sicher dass topics.txt IMMER mind. 100 frische Topics hat —
+# auch wenn der Pre-Check im Generate-Workflow mal failed.
+#
+# Marwan will NULL manuelle Topic-Pflege.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Auf wie viele Topics auffuellen (default 100)"
+        required: false
+        default: "100"
+      force:
+        description: "Force-Refill auch wenn schon viele drin sind"
+        type: boolean
+        default: false
+
+  schedule:
+    # Jeden Sonntag 01:00 UTC = 02:00 Uhr DE Winter / 03:00 Uhr DE Sommer
+    - cron: "0 1 * * 0"
+
+permissions:
+  contents: write
+
+jobs:
+  refill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests python-dotenv
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Refill topics
+        env:
+          TARGET: ${{ github.event.inputs.target || '100' }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          ARGS="--min 50 --target $TARGET"
+          if [ "$FORCE" = "true" ]; then ARGS="$ARGS --force"; fi
+          python refill_topics.py $ARGS
+
+      - name: Commit topics.txt
+        if: success()
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add topics.txt
+          if git diff --staged --quiet; then
+            echo "Nothing to commit — topics.txt unchanged"
+            exit 0
+          fi
+          git commit -m "Auto-refill topics $(date -u +%Y-%m-%d) — buffer up to 100"
+          git push
+          echo "=== topics.txt updated and pushed ==="
+
+      - name: Send failure email
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "🚨 Auto Run Bug — Topic Refill failed"
+          to: makevision1412@gmail.com
+          from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
+          body: |
+            ❌ Topic-Refill Workflow ist gescheitert.
+            ⚠️ Wenn nicht gefixt: topics.txt koennte irgendwann leer werden, dann Generate-Pipeline crasht.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Haeufigste Ursachen:
+            • Gemini + Anthropic beide down (sehr selten)
+            • git push permission issue
+            • Network timeout
+
+            Manueller Fix (innerhalb 1 Woche, sonst Generate-Pipeline crasht):
+            • GitHub → Actions → Auto-Refill Topics → Run workflow
+            • Oder lokal: python refill_topics.py --force --target 100 → git push
+
+            Auto-Pipeline (don't reply)

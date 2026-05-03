@@ -46,3 +46,34 @@ jobs:
           # Updates Repo-Secret IG_USER_ACCESS_TOKEN via gh CLI
           echo "$NEW_TOKEN" | gh secret set IG_USER_ACCESS_TOKEN --body -
           echo "OK — Repo-Secret aktualisiert."
+
+      - name: Send failure email
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "🚨 Auto Run Bug — IG Token Refresh failed (KRITISCH)"
+          to: makevision1412@gmail.com
+          from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
+          body: |
+            ❌ KRITISCH: IG-Token-Refresh ist gescheitert!
+            ⚠️ Wenn nicht innerhalb von 10 Tagen manuell gefixt → Token expired → ALLE Posts schlagen fehl.
+
+            Workflow:    ${{ github.workflow }}
+            Repository:  ${{ github.repository }}
+            Trigger:     ${{ github.event_name }}
+
+            🔗 LOG ANSEHEN:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Manueller Fix (innerhalb 10 Tagen!):
+            1. https://developers.facebook.com/apps → Healthrecode App
+            2. Instagram → API Setup → Generate access token
+            3. Long-Lived Token kopieren
+            4. GitHub → Settings → Secrets → IG_USER_ACCESS_TOKEN → Update
+
+            Auto-Pipeline (don't reply)
