@@ -1729,7 +1729,30 @@ def img_to_base64(path: Path) -> str:
 
 ## 32. 🎣 HOOK-REGELN (KRITISCH — bestimmt ob Post viral geht oder floppt!)
 
-**Ein schwacher Hook = Post scrollt vorbei. Pflichtlektüre für jeden neuen Claude.**
+# 🚨🚨🚨 ABSOLUTE PFLICHT — SLIDE 1 (HERO) MUSS HEFTIG GUTEN HOOK HABEN 🚨🚨🚨
+
+**Marwan-Direktive (User-Direktive von höchster Priorität):**
+> "Bild 1 muss IMMER heftig guten Hook haben"
+
+**Was das heißt für JEDEN Carousel-Plan den du generierst:**
+- Slide 1 H1+H2 müssen den User in **<2 Sekunden** stoppen lassen
+- Generic Bullshit wie "5 Tips for Sleep" oder "Benefits of Vitamin D" **NIEMALS akzeptieren**
+- Wenn AI (Gemini/Anthropic) einen schwachen Hook generiert: **REGENERIEREN** lassen, nicht abnicken
+- Hook muss MIND. 3 von 5 Elementen haben (Spezifität / Curiosity-Gap / Stakes / Authority / Schock)
+- **Wenn du als Claude unsicher bist ob ein Hook stark genug ist: er ist es nicht. Strengeren machen.**
+
+**Pre-Push Hook-Validation (PFLICHT):**
+- Lese H1 laut vor — klingt es generic? → fail
+- Würde 99% der IG-User vorbeiscrollen? → fail
+- Fehlt eine Zahl, Name, Hormon, Mechanismus, oder Schock-Element? → fail
+- Klingt es wie 1000 andere Posts? → fail
+- Bei Fail: NEU GENERIEREN
+
+**Ein schwacher Hook = Post stirbt im Algorithmus = Wasted Generation. Pflichtlektüre für jeden neuen Claude.**
+
+---
+
+
 
 ### 32.1 Was IST ein Hook?
 
