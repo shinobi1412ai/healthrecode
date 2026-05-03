@@ -3256,17 +3256,42 @@ Du fragst den User:
 
 Wenn schon eine App existiert (z.B. die HealthRecode-App):
 - Nichts machen — gleiche `FB_APP_ID` + `FB_APP_SECRET` für alle Brands nutzen
+- **ABER prüfe** dass der Use Case **"Alles auf deiner Seite verwalten"** GRÜN-HAKEN-konfiguriert ist (siehe 41.4b unten)
 
 Wenn keine App existiert:
 1. `https://developers.facebook.com/apps` → **Create App**
 2. Use Case wählen: **"Other"** → Type: **Business**
 3. Name: `MultiContentPipeline` oder ähnlich
 4. **Settings → Basic** → App ID + App Secret kopieren
-5. Use Cases hinzufügen:
+5. Use Cases hinzufügen (PFLICHT-Schritt — siehe 41.4b):
    - **Instagram API with Instagram Login** (für IG)
    - **Manage everything on your Page** (für FB-Posting)
 6. App-Mode: **"In Development"** lassen (nicht Live setzen — Live braucht App Review)
 7. Add Roles: dich selbst als Admin/Tester (Settings → Roles)
+
+### 41.4b 🔴 KRITISCH — Use Cases freischalten BEVOR Graph Explorer
+
+⚠️ **Reihenfolge ist Pflicht: Use Case Setup ZUERST, dann Graph Explorer.**
+
+Permissions wie `pages_manage_posts` (Pflicht für FB-Cross-Posting) erscheinen im Graph API Explorer **NICHT**, bis der zugehörige Use Case in der Meta-App freigeschaltet ist. Symptom wenn übersprungen: Permission ist im "Berechtigung hinzufügen" Such-Dropdown nicht zu finden → Token wird ohne Permission generiert → FB-Post failed.
+
+**Nach App-Erstellung (oder bei existierender App ohne grünen Haken):**
+
+1. App-Dashboard öffnen
+2. Liste **"App-Anpassung und Anforderungen"** suchen
+3. Klick auf `>` rechts neben **"Den Anwendungsfall „Alles auf deiner Seite verwalten" personalisieren"**
+4. Auf der nächsten Seite Permissions aktivieren:
+   - `pages_show_list`
+   - `pages_read_engagement`
+   - **`pages_manage_posts`** ← die kritische
+   - `pages_manage_metadata`
+   - `pages_manage_engagement` (optional, hilfreich)
+5. Speichern
+6. Zurück im Dashboard prüfen: Use Case hat jetzt **🟢 grünen Haken**
+
+**ERST DANN** zum Graph Explorer (Sektion 41.5/41.6) wechseln. Permissions sind jetzt verfügbar.
+
+**Detail-Reference:** siehe Sektion 43.2a für visuell-detaillierte Walkthrough mit Screenshot-Beschreibungen.
 
 ### 41.5 Step 3 — IG-Token holen
 
@@ -3418,8 +3443,52 @@ Im Graph API Explorer **bevor "Generate Access Token"** musst du diese Permissio
 
 1. `pages_show_list` — Pages auflisten
 2. `pages_read_engagement` — Engagement-Daten lesen
-3. **`pages_manage_posts`** ← ⚠️ **OFT VERGESSEN!** Ohne diese: Cross-Post failed mit `(#200) The permission(s) pages_manage_posts are not available`
+3. **`pages_manage_posts`** ← ⚠️ **NICHT vergessen, sondern erscheint NICHT im Explorer wenn nicht freigeschaltet!** (siehe 43.2a)
 4. `pages_manage_metadata` — Page-Metadaten
+
+### 43.2a 🔴 KRITISCH — `pages_manage_posts` ERST in Meta-App freischalten, DANN im Graph Explorer
+
+**Korrektur einer häufigen Falsch-Annahme:** Diese Permission wird oft als "vergessen" beschrieben — das ist FALSCH. Die Permission **erscheint nicht im Graph Explorer Permission-Search** bis sie über die Meta-App's **Use Cases Dashboard** für die App freigeschaltet wurde.
+
+**Wenn du also im Graph Explorer nach `pages_manage_posts` suchst und es kommt nichts → das ist KEIN Bug, sondern fehlendes Use-Case-Setup in der App.**
+
+**So schaltest du es frei (Pflicht-Schritt VOR Graph Explorer):**
+
+1. `https://developers.facebook.com/apps` → deine App öffnen (z.B. HealthRecode)
+2. Im Dashboard siehst du eine Liste mit **"App-Anpassung und Anforderungen"** (oder ähnlich) — dort sind verschiedene **Use Cases** als Zeilen mit grünen/grauen Haken
+3. Such die Zeile: **"Den Anwendungsfall „Alles auf deiner Seite verwalten" personalisieren"**
+4. Klick auf den **`>` Pfeil rechts** in dieser Zeile (oder direkt auf den Zeilentitel)
+5. Auf der nächsten Seite siehst du eine Liste der Permissions die zu diesem Use Case gehören:
+   - `pages_show_list`
+   - `pages_read_engagement`
+   - `pages_manage_posts` ← **HIER wird sie sichtbar/aktiviert**
+   - `pages_manage_metadata`
+   - `pages_manage_engagement`
+   - etc.
+6. **Aktiviere** alle die du brauchst (mind. die 4 oben)
+7. **Speichern/Bestätigen** im Use-Case-Editor
+
+**Erst NACH Schritt 7** erscheint `pages_manage_posts` im Graph API Explorer und kann zu einem Token added werden.
+
+**Symptom wenn du diesen Schritt überspringst:**
+- Im Graph Explorer "Berechtigung hinzufügen" → Suche nach `pages_manage_posts` → keine Ergebnisse
+- Oder: Permission erscheint mit grauem Schloss-Icon (nicht aktivierbar)
+- Folge: Token wird ohne diese Permission generiert → FB-Cross-Post failed mit `(#200) The permission(s) pages_manage_posts are not available`
+
+**Dieser Schritt ist 1× pro Meta-App nötig.** Wenn die App schon "Alles auf deiner Seite verwalten" konfiguriert hat (grüner Haken im Dashboard), kannst du Schritt 1-7 überspringen und direkt zum Graph Explorer.
+
+### 43.2b Wo der grüne Haken ist (Visual-Hinweis für deutsche UI)
+
+Im App-Dashboard die Zeilen mit Use Cases haben am LINKEN Rand ein Icon:
+- 🟢 **Grüner Haken** in Kreis = Use Case schon vollständig konfiguriert → Permissions sind im Explorer verfügbar
+- ⚪ **Grauer leerer Kreis** = Use Case noch nicht konfiguriert → Permissions sind im Explorer NICHT verfügbar → erst konfigurieren
+
+**Häufiges Setup für HealthRecode/ähnliche Brands** (alle sollten grünen Haken haben):
+- Den Anwendungsfall „Messaging und Content auf Instagram verwalten" personalisieren
+- Den Anwendungsfall „Facebook-, Instagram- und Threads-Content auf anderen Websites einbetten" personalisieren
+- Den Anwendungsfall „Auf die Live Video API zugreifen" personalisieren
+- Den Anwendungsfall **„Alles auf deiner Seite verwalten"** personalisieren ← KRITISCH für FB-Cross-Posting
+- Testing-Anforderungen überprüfen und abschließen
 
 ### 43.3 Deutsche UI-Eigenheiten (Marwan-spezifische Gotchas)
 
@@ -3682,13 +3751,26 @@ gh run view $RUN_ID --repo shinobi1412ai/$BRAND --log | Select-String "Status"
 ### Bug #45 — `(#200) The permission(s) pages_manage_posts are not available`
 
 **Wann:** FB Cross-Post failed obwohl FB_PAGE_ACCESS_TOKEN gesetzt ist
-**Root Cause:** User Token wurde im Graph Explorer ohne `pages_manage_posts` Permission generiert. Dieser Permission ist KEINE Default-Permission und muss explizit added werden bevor "Generate Access Token" geklickt wird.
-**Fix:**
-1. Im Graph Explorer "Berechtigung hinzufügen" → `pages_manage_posts` (+ `pages_show_list`, `pages_read_engagement`, `pages_manage_metadata`)
-2. **NEU "Generate Access Token"** klicken (nicht refreshen — Permission-Set wird nur beim Generate übernommen)
-3. Im Permission-Popup ALLE 4 zustimmen
-4. Dann erst Forever-Token-Script
-**Prevention:** In Sektion 43.2 als Pflicht-Liste dokumentiert; Setup-Checklist Sektion 41 erwähnt es explizit.
+**Root Cause:** ⚠️ **NICHT** "vergessen im Graph Explorer" — sondern: Permission `pages_manage_posts` ist im Graph Explorer **gar nicht erst verfügbar/sichtbar**, bis sie in der Meta-App's **Use Cases Dashboard** (über "Den Anwendungsfall „Alles auf deiner Seite verwalten" personalisieren") freigeschaltet wurde. Wenn der User im Explorer-Dropdown sucht und sie nicht findet, ist das KEIN Bug der Suche — es bedeutet die Use Case ist nicht konfiguriert in der App.
+
+**Fix in 2 Phasen (Reihenfolge wichtig!):**
+
+**Phase 1 — Permission in Meta-App freischalten** (1× pro App):
+1. `https://developers.facebook.com/apps` → deine App
+2. Dashboard → Use Case Liste → klick auf `>` rechts neben **"Den Anwendungsfall „Alles auf deiner Seite verwalten" personalisieren"**
+3. Auf der detail-Seite: aktiviere `pages_manage_posts`, `pages_show_list`, `pages_read_engagement`, `pages_manage_metadata`
+4. Speichern → grüner Haken im Dashboard
+
+**Phase 2 — Token mit Permission generieren** (im Graph Explorer):
+1. `https://developers.facebook.com/tools/explorer/`
+2. "Berechtigung hinzufügen" → **JETZT** erscheinen die Permissions in der Suche → alle 4 selektieren
+3. **NEU "Generate Access Token"** klicken (nicht refreshen)
+4. Im Permission-Popup ALLE 4 zustimmen
+5. Dann erst Forever-Token-Script ausführen
+
+**Prevention:** Sektion 43.2a dokumentiert den Use-Case-Freischalt-Schritt explizit; Setup-Checklist Sektion 41 listet ihn als Pflicht-Schritt VOR dem Graph Explorer; Sektion 43.2b zeigt visuell wie man die grünen Haken im Dashboard erkennt.
+
+**Marwan-Memory:** Marwan hat sich darüber beschwert weil ich initial geschrieben hatte "Permission oft vergessen". Korrekt: "Permission muss erst in App freigeschaltet werden, sonst erscheint sie im Explorer gar nicht."
 
 ### Bug #46 — `Tried accessing nonexisting field (accounts)` (Code 100)
 
