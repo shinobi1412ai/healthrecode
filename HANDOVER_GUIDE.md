@@ -3483,18 +3483,71 @@ print(r.status_code)  # sollte 200
 
 **Was:** Bei Workflow-Fail kommt eine Email zu `makevision1412@gmail.com` mit Subject `🚨 Auto Run Bug — \<workflow\>` und direktem Log-Link. Bei erfolgreichen Posts kommt `✅ Auto-Post live`.
 
-### 44.1 Setup (1×)
+⚠️ **HÄUFIGE VERWIRRUNG (Marwan ist drauf reingefallen):** SMTP_PASS ist NICHT das normale Gmail-Passwort. Es ist ein speziell für Apps generiertes 16-stelliges Passwort. Ohne 2FA kann man keines erstellen.
 
-1. **Gmail 2FA aktivieren** (falls noch nicht): `https://myaccount.google.com/security`
-2. **App-Password generieren**: `https://myaccount.google.com/apppasswords`
-   - App name: `HealthRecode Pipeline`
-   - Create → 16-stelligen Code kopieren (Format: `xxxx xxxx xxxx xxxx`)
-   - **Leerzeichen entfernen** beim Pasten → 16 Buchstaben am Stück
-3. **GitHub Secrets** (via gh CLI):
-   ```powershell
-   echo "makevision1412@gmail.com" | gh secret set SMTP_USER --repo shinobi1412ai/healthrecode
-   echo "DEIN_APP_PASSWORD" | gh secret set SMTP_PASS --repo shinobi1412ai/healthrecode
-   ```
+### 44.1 Setup (1× — folge GENAU dieser Reihenfolge)
+
+**Schritt 1: 2FA aktivieren** (falls noch nicht — Pflicht für App-Passwords):
+1. Geh zu `https://myaccount.google.com/security`
+2. Bei **"2-Step Verification"** → klicken → aktivieren
+3. Phone-Verification durchgehen (SMS-Code eingeben)
+
+**Schritt 2: App-Password generieren:**
+1. Geh zu `https://myaccount.google.com/apppasswords`
+2. Bei **"App name"** eingeben: `HealthRecode Pipeline` (oder beliebigen Namen)
+3. Klick **"Create"**
+4. Es erscheint ein **16-stelliger Code** in Format `xxxx xxxx xxxx xxxx`
+5. **WICHTIG:** Code SOFORT kopieren — wird nur EINMAL angezeigt
+6. **Leerzeichen entfernen** beim Pasten → 16 Buchstaben am Stück, also aus `abcd efgh ijkl mnop` wird `abcdefghijklmnop`
+
+**Schritt 3: In GitHub Secrets eintragen** (via gh CLI — kein Browser-Klicken nötig):
+```powershell
+# Email-Adresse als SMTP_USER
+echo "makevision1412@gmail.com" | gh secret set SMTP_USER --repo shinobi1412ai/healthrecode
+
+# App-Password (16 Zeichen, OHNE Leerzeichen) als SMTP_PASS
+echo "abcdefghijklmnop" | gh secret set SMTP_PASS --repo shinobi1412ai/healthrecode
+```
+
+**Schritt 4: Verifizieren dass beide Secrets da sind:**
+```powershell
+gh secret list --repo shinobi1412ai/healthrecode | Select-String "SMTP"
+# Erwartete Ausgabe:
+# SMTP_PASS    Updated <jetzt>
+# SMTP_USER    Updated <jetzt>
+```
+
+**Schritt 5: Test-Email triggern** (optional aber empfohlen):
+```powershell
+# Triggert absichtlich einen Fail im Generate-Workflow um Email zu testen
+# Topic mit invaliden Zeichen → Crash → Failure-Email sollte kommen
+gh workflow run generate_carousels.yml --field topic="ZZZ_INVALID_TEST_FAIL" --field count=1 --repo shinobi1412ai/healthrecode
+
+# Warte 5 Min, dann Inbox checken auf:
+# Subject: "🚨 Auto Run Bug — Generate Carousels failed"
+```
+
+### 44.1b Wichtige Klarstellung (für zukünftige Claude-Sessions)
+
+**Wenn der User fragt "was für ein Passwort? PW von was?" → er meint SMTP_PASS.**
+
+Antwort-Pattern:
+1. Klar machen: "NICHT dein normales Gmail-Passwort"
+2. Erklären: "Ein 16-stelliges App-Password — separater Code nur für diese Pipeline"
+3. Direkt-Link geben: `https://myaccount.google.com/apppasswords`
+4. Voraussetzung erwähnen: "2FA muss aktiv sein, sonst geht App-Password nicht"
+5. Final-Step: gh CLI Command zum Eintragen
+
+**Niemals den User fragen "kennst du dein Gmail-Passwort?"** — das ist eine Sicherheitsverletzung und auch nicht das was er braucht.
+
+### 44.1c Was passiert ohne SMTP-Secrets
+
+Workflows laufen trotzdem, aber:
+- Email-Step `dawidd6/action-send-mail@v3` schlägt fehl
+- Workflow wird ROT angezeigt (auch wenn IG/FB-Post erfolgreich war)
+- Marwan denkt fälschlich "Pipeline ist kaputt"
+
+**Fix:** Email-Steps haben `continue-on-error: true` (für Success-Email). Failure-Emails sind kritischer aber failen nur silent (ohne Workflow als gescheitert zu markieren wenn das eigentliche Posting funktioniert hat).
 
 ### 44.2 Email-Templates (in Workflows)
 
