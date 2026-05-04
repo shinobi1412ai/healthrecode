@@ -3153,6 +3153,7 @@ Mit dieser Checklist + dem Pipeline-Render-Fix (39.5) + den Process-Lessons (M1-
 - **gh CLI Workflow (Sektion 45)** — Alle Setup-Steps via Command-Line statt Browser-Klicken (Marwan bevorzugt das stark)
 - **Bug-Log dieser Session (Sektion 46)** — Bugs #45-52 mit Root-Cause + Fix
 - **Volume Math (Sektion 47)** — Mit aktueller Single-Account-Strategie skaliert die Pipeline auf 100+ Carousels/Tag ohne Limits zu reißen
+- **🚨 Token-Splitting Rule (Sektion 49)** — IG-Token ≠ FB-Token, NIEMALS vertauschen oder einen "Master-Token" bauen — sonst 400 Permission Error (Bug #53)
 
 ---
 
@@ -3860,6 +3861,44 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";"
 **Fix:** `refill_topics.py` (siehe Sektion 40) läuft VOR jedem Generate. Wenn topics.txt < 15 → Gemini generiert auf 50. Mit Dedupe gegen `posted/` damit keine bereits-genutzten Topics nochmal kommen.
 **Prevention:** Im Workflow als erster Step direkt vor Generate. Bei neuem Brand `refill_topics.py` SYSTEM_PROMPT an Niche anpassen (siehe 40.6).
 
+### Bug #53 — IG-Post failed mit `400 "permission(s) must be granted"` weil Page Token für IG verwendet
+
+**Wann:** Pipeline für anderen Brand (nicht HealthRecode) failed beim ersten IG-Post nach Forever-Token-Setup.
+
+**Stack-Trace (echt aus User-Report):**
+```
+FEHLER bei carousel item: 400 "Any of the pages_read_engagement, pages_manage_metadata,
+pages_read_user_content, pages_manage_ads, pages_show_list or
+pages_messaging permission(s) must be granted"
+```
+
+**Root Cause:** User hat in seinem Code `FB_PAGE_ACCESS_TOKEN` als "bevorzugten Token für ALLE API-Calls" gesetzt — IG sowie FB. Page Token hat zwar `pages_manage_posts` (gut für FB), aber NICHT `instagram_business_content_publish` (Pflicht für IG). IG-API rejected daher den Token. Vorheriger Run lief noch durch weil ein alter `META_LONG_LIVED_TOKEN` (User Token) noch im System war.
+
+**Fix:** **Token-Splitting** — nie einen Token für beide Plattformen nutzen:
+- IG-API → `IG_USER_ACCESS_TOKEN` (User Token mit IG-Permissions)
+- FB-API → `FB_PAGE_ACCESS_TOKEN` (Page Token mit FB-Page-Permissions)
+
+```python
+# IG (Instagram Login API)
+BASE = "https://graph.instagram.com/v22.0"
+ig_token = os.environ["IG_USER_ACCESS_TOKEN"]
+requests.post(f"{BASE}/{ig_id}/media", params={..., "access_token": ig_token})
+
+# FB (Meta Graph API)
+BASE = "https://graph.facebook.com/v21.0"
+fb_token = os.environ["FB_PAGE_ACCESS_TOKEN"]
+requests.post(f"{BASE}/{page_id}/photos", params={..., "access_token": fb_token})
+```
+
+**Prevention:**
+- Sektion 49 (Token-Splitting Rule) ist neu mit Tabelle, Code-Pattern, und Fehler-Symptomen
+- HealthRecode's `post_from_queue.py` ist VERIFIZIERT korrekt (`IG_USER_ACCESS_TOKEN` für IG, `FB_PAGE_ACCESS_TOKEN` für FB)
+- Bei JEDEM neuen Brand-Setup MUSS verifiziert werden: hat der Code 2 separate Token-Variablen?
+
+**Marwan-Memory:** Marwan hat das Problem entdeckt während er Ronin Codex aufgesetzt hat — bei einem Brand wurde der "FB_PAGE_ACCESS_TOKEN als universeller Token" Anti-Pattern angewendet. HealthRecode war nicht betroffen weil der ursprüngliche Code-Build die 2 Tokens schon getrennt hatte. Kritisch: alle ZUKÜNFTIGEN Brand-Setups müssen Token-Splitting beibehalten.
+
+---
+
 ### Bug #52 — Wrong-token-confusion bei Forever-Token-Setup
 
 **Wann:** User updated `FB_PAGE_ACCESS_TOKEN` mit Token aus Graph Explorer (Short-Lived 1h) statt mit Token aus Script-Output (Forever)
@@ -3947,6 +3986,93 @@ Reasons:
 - Phase 3 (Monat 2): 5 Brands live
 - Phase 4 (Monat 3-4): 10 Brands live
 - Phase 5 (Monat 6+): Video-Pipeline (TikTok/Reels/Shorts)
+
+---
+
+## 49. 🔑🔑 TOKEN-SPLITTING RULE — IG-Token ≠ FB-Token (NIEMALS ÜBERSEHEN!)
+
+# 🚨 ABSOLUTE PFLICHT — DIE 2 TOKENS DÜRFEN NIEMALS VERTAUSCHT WERDEN 🚨
+
+**Anti-Pattern (führt zu sofortigem Pipeline-Fail):**
+> "Wir nutzen FB_PAGE_ACCESS_TOKEN als bevorzugten Token für ALLE API-Calls" ← FALSCH! WERDET ABLEHNEN!
+
+**Real-World Bug** (bei einem anderen Brand-Setup gesehen):
+```
+FEHLER bei carousel item: 400 "Any of the pages_read_engagement, pages_manage_metadata,
+pages_read_user_content, pages_manage_ads, pages_show_list or
+pages_messaging permission(s) must be granted"
+```
+
+**Root Cause:** Page Token wurde für IG-API benutzt. Page Token hat `pages_manage_posts` (gut für FB), aber NICHT `instagram_business_content_publish` (Pflicht für IG). IG-API hat dann gemeckert weil keine der erlaubten IG-Permissions im Token waren.
+
+### 49.1 Die EINE Regel die nie gebrochen wird:
+
+| Plattform | Token-Variable | Endpoint | Permissions |
+|---|---|---|---|
+| **Instagram** | `IG_USER_ACCESS_TOKEN` | `graph.instagram.com/v22.0/...` | instagram_business_basic, instagram_business_content_publish, instagram_business_manage_messages, instagram_business_manage_comments |
+| **Facebook Page** | `FB_PAGE_ACCESS_TOKEN` | `graph.facebook.com/v21.0/{page_id}/...` | pages_show_list, pages_read_engagement, pages_manage_posts, pages_manage_metadata |
+
+**MERKE:**
+- Token aus `me/accounts` → ist ein **Page Token** → **NUR für FB Page Posting**
+- Token aus IG-Login-Flow oder Long-Lived-Exchange → ist ein **IG User Token** → **NUR für Instagram Content API**
+- **Sie sind NICHT austauschbar** — auch wenn beide mit `EAA...` anfangen
+
+### 49.2 Welche Tokens darf man teilen?
+
+**NEIN, NIEMALS teilen:**
+- ❌ Page Token für IG-API verwenden → 400 Permission Error
+- ❌ IG User Token für FB-Page-Posting verwenden → 200 OAuth Error
+- ❌ Einen "universellen" Master-Token bauen
+
+**JA, das ist OK:**
+- ✓ Beide Tokens nebeneinander in den Secrets haben (mit unterschiedlichen Namen)
+- ✓ Code splittet welcher wofür benutzt wird (siehe `post_from_queue.py` Zeile 48 vs 87)
+- ✓ Beide aus dem GLEICHEN Meta-App ableiten (1 App reicht für beide Tokens)
+
+### 49.3 Korrekter Code-Pattern (NIEMALS abweichen)
+
+```python
+# RICHTIG ✓ — getrennte Tokens für getrennte APIs
+def post_to_instagram(image_urls, caption):
+    ig_token = os.environ["IG_USER_ACCESS_TOKEN"]  # IG User Token
+    ig_id = os.environ["IG_USER_ID"]
+    BASE = "https://graph.instagram.com/v22.0"  # IG-spezifischer Endpoint
+    requests.post(f"{BASE}/{ig_id}/media", params={"image_url": url, "access_token": ig_token, ...})
+
+def post_to_facebook(image_urls, caption):
+    fb_token = os.environ["FB_PAGE_ACCESS_TOKEN"]  # FB Page Token
+    page_id = os.environ["FB_PAGE_ID"]
+    BASE = "https://graph.facebook.com/v21.0"  # FB-spezifischer Endpoint
+    requests.post(f"{BASE}/{page_id}/photos", params={"url": url, "access_token": fb_token, ...})
+```
+
+```python
+# FALSCH ❌ — gleicher Token für beide APIs
+def post_everywhere(image_urls, caption):
+    token = os.environ["FB_PAGE_ACCESS_TOKEN"]  # ← FALSCH wenn auch für IG
+    # Funktioniert für FB, crasht bei IG mit 400 Permission Error
+```
+
+### 49.4 Symptome wenn das Token-Splitting verletzt wird
+
+| Symptom | Welcher Token wo falsch | Fix |
+|---|---|---|
+| `400 "Any of the pages_read_engagement, pages_manage_metadata, pages_read_user_content, pages_manage_ads, pages_show_list or pages_messaging permission(s) must be granted"` | Page Token bei IG-API | IG-Code muss `IG_USER_ACCESS_TOKEN` nutzen |
+| `400 "(#200) The user hasn't authorized the application to perform this action"` | IG User Token bei FB-Page-API | FB-Code muss `FB_PAGE_ACCESS_TOKEN` nutzen |
+| `400 "(#100) Tried accessing nonexisting field (accounts)"` | Page Token bei `/me/accounts` Endpoint | User Token (nicht Page) für `me/accounts` |
+| `400 "Invalid OAuth access token"` | Allgemein vertauscht | Token-Type prüfen (IG-Endpoint braucht IG-Token) |
+
+### 49.5 Multi-Brand: weiterhin getrennte Token-Pairs
+
+Bei mehreren Brands hast du nicht 1 sondern 2 Tokens PRO Brand:
+- HealthRecode: `IG_USER_ACCESS_TOKEN` + `FB_PAGE_ACCESS_TOKEN`
+- Ronin: `IG_USER_ACCESS_TOKEN_RONIN` + `FB_PAGE_ACCESS_TOKEN_RONIN` (oder in eigenem Repo gleiche Namen)
+
+**NIEMALS** versuchen einen Master-Token zu bauen der auf beide Plattformen postet. Das ist API-architektonisch nicht möglich und du wirst Stunden debuggen.
+
+### 49.6 Bug-Reference
+
+Siehe **Bug #53** in Sektion 46 für Real-World-Beispiel mit Stack Trace.
 
 ---
 
