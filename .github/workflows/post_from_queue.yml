@@ -26,6 +26,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # required so auto-disable step can stop the cron on Meta-block
 
 jobs:
   post:
@@ -59,6 +60,7 @@ jobs:
           EOF
 
       - name: Post oldest queued carousel
+        id: post_step
         env:
           PICK: ${{ github.event.inputs.pick }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
@@ -66,7 +68,29 @@ jobs:
           ARGS=""
           if [ -n "$PICK" ]; then ARGS="$ARGS --pick $PICK"; fi
           if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          set +e
           python post_from_queue.py $ARGS
+          POST_EXIT_CODE=$?
+          echo "post_exit_code=$POST_EXIT_CODE" >> "$GITHUB_OUTPUT"
+          # Exit-Code 78 = Meta-Auth-Block detected (190/200) — let next step handle
+          if [ "$POST_EXIT_CODE" -eq 78 ]; then
+            echo "::warning::Meta-Auth-Block detected — auto-disabling cron schedules"
+            exit 0   # Don't fail the workflow yet, let auto-disable run
+          fi
+          exit $POST_EXIT_CODE
+
+      - name: Auto-Disable cron schedules on Meta-Auth-Block
+        if: steps.post_step.outputs.post_exit_code == '78'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Meta-Auth-Block detected — disabling cron schedules to prevent API hammering"
+          gh workflow disable post_from_queue.yml --repo ${{ github.repository }} || true
+          gh workflow disable generate_carousels.yml --repo ${{ github.repository }} || true
+          echo "::error::Cron auto-disabled. Account locked or token revoked."
+          echo "::error::Re-enable via: gh workflow enable post_from_queue.yml --repo ${{ github.repository }}"
+          echo "::error::Re-enable via: gh workflow enable generate_carousels.yml --repo ${{ github.repository }}"
+          exit 1
 
       - name: Commit posted/ + queue/ changes
         if: success()

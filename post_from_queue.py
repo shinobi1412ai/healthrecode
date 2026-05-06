@@ -34,6 +34,33 @@ POSTED_DIR = ROOT / "posted"
 QUEUE_DIR.mkdir(exist_ok=True)
 POSTED_DIR.mkdir(exist_ok=True)
 
+# Special exit code: signals Meta-Auth-Block (Code 190/200) to the GitHub workflow.
+# When the workflow sees this code, it auto-disables the cron schedule to prevent
+# further API hits during a Meta-lock — preventing extension of the lock.
+EXIT_AUTH_BLOCKED = 78
+
+
+def _detect_auth_block(response_text: str) -> bool:
+    """Returns True if the Meta API response indicates Auth/Lock issues
+    (Code 190 = OAuth invalid/expired/revoked, Code 200 = API access blocked).
+    These errors mean human intervention is required — no point retrying."""
+    try:
+        err = json.loads(response_text).get("error", {})
+        code = err.get("code")
+        msg = err.get("message", "")
+        if code in (190, 200):
+            return True
+        block_phrases = [
+            "API access blocked",
+            "permission(s) must be granted",
+            "session has been invalidated",
+            "user has not authorized",
+            "Error validating access token",
+        ]
+        return any(p in msg for p in block_phrases)
+    except Exception:
+        return False
+
 
 def find_oldest_queue_file() -> Path | None:
     """Findet das älteste POST_*.json in queue/ (nach mtime sortiert)."""
@@ -202,6 +229,18 @@ def main():
     print("\n[Post FB] Cross-Post zu Facebook...")
     fb_status = post_to_facebook(image_urls, caption)
     print(f"FB Status: {fb_status}")
+
+    # AUTH-BLOCK CHECK: if the IG or FB error response contains Meta-Auth-Block
+    # patterns (Code 190 = OAuth invalid, Code 200 = API blocked), exit with
+    # code 78 so the GitHub workflow auto-disables the cron and stops hitting
+    # Meta's API repeatedly during a lock.
+    if _detect_auth_block(status) or _detect_auth_block(fb_status):
+        print("\n" + "=" * 60, file=sys.stderr)
+        print("META AUTH-BLOCK detected (Code 190/200).", file=sys.stderr)
+        print("Stopping pipeline. Cron should be auto-disabled by workflow.", file=sys.stderr)
+        print("File stays in queue/ — no posting attempt will retry until you fix.", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        sys.exit(EXIT_AUTH_BLOCKED)
 
     # 5. Bei Erfolg: zu posted/ verschieben (mit IG + FB Status)
     if status.startswith("posted:"):
