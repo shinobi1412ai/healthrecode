@@ -145,29 +145,3 @@ jobs:
 
             Auto-Pipeline (don't reply)
 
-      - name: Send success email (with post details)
-        if: success()
-        continue-on-error: true
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
-          username: ${{ secrets.SMTP_USER }}
-          password: ${{ secrets.SMTP_PASS }}
-          subject: "✅ Auto-Post live — HealthRecode"
-          to: makevision1412@gmail.com
-          from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
-          body: |
-            ✅ Carousel ist live auf Instagram + Facebook!
-
-            🔗 IG-Profile checken:
-            https://www.instagram.com/healthrecode/
-
-            Workflow-Run (für Details):
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            Posted-Files (mit IG/FB-IDs):
-            ${{ github.server_url }}/${{ github.repository }}/tree/main/posted
-
-            Auto-Pipeline (don't reply)
