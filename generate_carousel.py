@@ -354,7 +354,8 @@ def img_to_base64(path: Path) -> str:
 
 
 def fetch_ai_image(prompt: str, idx: int) -> Path:
-    """Generiert AI-Bild via Together AI FLUX 1.1 Pro (~$0,04/Bild). 4:5 Aspect."""
+    """Generiert AI-Bild. Primary: Gemini Imagen 3 (GRATIS, 1500/Tag).
+    Fallback: Together AI FLUX 1.1 Pro ($0,04/Bild)."""
     import hashlib
     key = hashlib.md5(prompt.encode()).hexdigest()[:10]
     cache = IMG_CACHE / f"slide_{idx}_ai_{key}.png"
@@ -362,11 +363,42 @@ def fetch_ai_image(prompt: str, idx: int) -> Path:
         print(f"  [{idx}] AI Cache hit: {cache.name}")
         return cache
 
+    # --- PRIMARY: Gemini Imagen 3 Flash (gratis) ---
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if gemini_key:
+        try:
+            print(f"  [{idx}] AI Render (Gemini Imagen 3 — gratis): '{prompt[:80]}...'")
+            r = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict",
+                headers={"Content-Type": "application/json"},
+                params={"key": gemini_key},
+                json={
+                    "instances": [{"prompt": prompt}],
+                    "parameters": {
+                        "sampleCount": 1,
+                        "aspectRatio": "3:4",
+                        "safetyFilterLevel": "block_only_high",
+                        "personGeneration": "allow_adult",
+                    },
+                },
+                timeout=120,
+            )
+            if r.status_code == 200:
+                predictions = r.json().get("predictions", [])
+                if predictions and predictions[0].get("bytesBase64Encoded"):
+                    cache.write_bytes(base64.b64decode(predictions[0]["bytesBase64Encoded"]))
+                    print(f"  [{idx}] Gemini Imagen OK — {cache.stat().st_size // 1024}KB")
+                    return cache
+            print(f"  [{idx}] Gemini Imagen fail ({r.status_code}), fallback Together AI...")
+        except Exception as e:
+            print(f"  [{idx}] Gemini Imagen error ({e}), fallback Together AI...")
+
+    # --- FALLBACK: Together AI FLUX 1.1 Pro ---
     api_key = os.environ.get("TOGETHER_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("TOGETHER_API_KEY fehlt für AI-Rendering")
+        raise RuntimeError("Weder GEMINI_API_KEY noch TOGETHER_API_KEY gesetzt — kein AI-Rendering möglich")
 
-    print(f"  [{idx}] AI Render (FLUX 1.1 Pro): '{prompt[:80]}...'")
+    print(f"  [{idx}] AI Render Fallback (FLUX 1.1 Pro): '{prompt[:80]}...'")
     r = requests.post(
         "https://api.together.xyz/v1/images/generations",
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
