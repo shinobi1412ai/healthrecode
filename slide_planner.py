@@ -96,12 +96,21 @@ For each new carousel, pick a DIFFERENT hero category than the last 3 posts. Cyc
 - Yoga pose at sunset (overused)
 - Anyone holding a generic vegetable while smiling
 
-### Topic → Best hero category:
-- Hormone/Mechanism topics → Anatomical AI Render or Macro/Microscopic
-- Routine/Habit topics → Action Shot or Environment Shot
-- Symptom/Warning topics → Body Part Detail or Silhouette
-- Result/Transformation topics → Split-Frame Concept
-- Food/Nutrient topics → Object Hero (the food alone, no person)
+### Topic → Best hero category (STRICT — follow this table):
+- Fitness / workout / HIIT / muscle / training → **Action Shot: athlete, woman lifting weights, man sprinting, boxer, gym scene** — NEVER anatomy render
+- Sleep / circadian / REM / melatonin → **Action Shot: person sleeping in dim bedroom, eyes closed at sunrise** — NEVER anatomy render
+- Fasting / metabolism / ketosis / weight loss → **Action Shot: person skipping meal, silhouette at sunrise, woman checking watch before eating**
+- Nutrition / food / vitamin / mineral / supplement → **Object Hero: the specific food or supplement** (salmon, broccoli, magnesium pill, sun on skin)
+- Stress / anxiety / cortisol / mental health → **Action Shot: woman alone by window, man head in hands, person in nature thoughtful**
+- Women's health / hormones / menstrual / fertility → **Silhouette or Body Part: female silhouette, abstract female form, hand on belly**
+- Gut / microbiome / digestion / IBS → **Action Shot: person holding stomach, woman eating healthy bowl, gut anatomy only as secondary slide**
+- Brain / ADHD / focus / memory / neuro → **Action Shot: person studying intensely, woman meditating with focus, brain anatomy only as secondary**
+- Aging / longevity / telomeres / NAD+ → **Action Shot: older athlete running, 60yo woman lifting weights, energetic elderly person**
+- Pure anatomy (organs, cells, molecular) → **AI Render** — ONLY when topic is literally about internal anatomy with no human context
+
+⚠️ HARD RULE: ai_render: true is BANNED for fitness, sleep, stress, nutrition, women's health, gut (human context) topics.
+Use REAL PEOPLE (pexels_query) for any topic where a human can physically demonstrate the topic.
+ai_render is ONLY for: molecular processes, specific organ cross-sections, cellular biology.
 
 ### When you MUST use a face shot:
 ONLY when the topic is explicitly about facial expression, mental state visible on face (panic, exhaustion shown via posture/eyes), or specific facial anatomy. Even then: use SIDE PROFILE or 3/4 angle, not direct close-up.
@@ -125,7 +134,7 @@ For Health Recode (medical/health/anatomy/wellness), match topic to concrete sub
 | Brain / mental health | AI render of brain regions, person looking pensive, neural pathways |
 | Gut / digestion | AI render of gut microbiome, food photo, person holding stomach |
 | Cancer / cell biology | AI render of cell mitosis/apoptosis, lab scene, microscope view |
-| Workout / muscle recovery | Athlete in dim gym, AI render of muscle fibers, ice bath |
+| Workout / muscle recovery | Woman lifting barbell, man doing pull-ups, athlete ice bath, boxer training, runner at dawn |
 | Women's health / hormones | Female silhouette, AI render of ovaries/uterus, period-tracking abstract |
 
 ### Adapt on the fly when topic isn't in the table:
