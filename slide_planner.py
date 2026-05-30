@@ -176,46 +176,68 @@ NEVER default to "businesswoman in suit" or "concerned woman with hand on cheek 
 ### Rule when in doubt:
 If topic is medical/health/fitness → woman should be DOING something physical or contextual. Activity > business pose.
 
-### Brand-vertical override:
-This is a MEDICAL brand. If you are unsure → default to AI-rendered anatomy/cells.
-Do NOT use:
-- Suit-and-tie business photos
-- Hustle-culture / motivation imagery (gold chains, clocks, money, success)
-- Generic stock "thumbs up" / "high five" lifestyle shots
-- Office / laptop / computer setups (unless topic is screen-time related)
-
-If a future user adapts this prompt for a DIFFERENT vertical (fitness, finance, mindset), the entire mapping table above MUST be rewritten — never reuse medical mapping for a fitness brand.
-
 ## VISUAL MATCHING — CRITICAL
-Every image must DIRECTLY visualize what the slide says. NEVER use generic/abstract photos.
+Every slide gets a UNIQUE AI-generated image via Pollinations FLUX. NEVER use Pexels. NEVER repeat same scene type twice in one carousel.
 
-For each slide, FIRST decide the visual concept, THEN write the query.
+### GOLDEN RULE: ai_render: true on EVERY slide. pexels_query is NEVER used.
 
-### When to use ai_render: true (Together AI FLUX 1.1 Pro):
-ALWAYS for these scenarios — Pexels has nothing realistic for them:
-- Anatomy / 3D body renders ("photorealistic 3D render of human heart muscle, anatomically accurate, dramatic lighting")
-- Cellular processes (autophagy, mitosis, apoptosis) — render molecular/cellular concepts
-- Hormones / chemical reactions / molecules
-- Brain regions, neural pathways, neurotransmitters
-- Conceptual visuals (e.g., "glycogen molecules in liver cells, scientific render")
-- Any internal-body process the topic describes
+For each slide write a rich, specific `ai_prompt` that Pollinations FLUX will generate.
 
-ai_prompt format: detailed photorealistic 3D scientific render description, e.g.:
-"Photorealistic 3D render of human liver cells, glycogen granules visible, scientific accuracy, dramatic studio lighting, deep red and blue tones, medical textbook quality, 8k"
+### ai_prompt style by scene type:
 
-### When to use pexels_query (real stock photos):
-ONLY for these scenarios where Pexels actually has good content:
-- A person doing a specific action (running, sleeping, drinking water, holding their head)
-- A specific food item (banana, broccoli, glass of water — but NOT abstract "metabolism")
-- A specific object (stethoscope, pill bottle, blood pressure cuff)
-- A specific environment (bedroom, gym, kitchen — only if context matters)
+**ATHLETE / PERSON IN ACTION** (fitness, workout, sleep, stress, nutrition):
+"Photorealistic photo of [specific person doing specific action], [environment], [lighting], cinematic, 8k, hyperrealistic"
+Examples:
+- "Photorealistic photo of muscular woman deadlifting heavy barbell in dark modern gym, dramatic side lighting, sweat on skin, intense focus, cinematic 8k"
+- "Photorealistic photo of young man sprinting on empty road at sunrise, motion blur on legs, golden hour light, athletic build, hyperrealistic 8k"
+- "Photorealistic photo of woman sleeping deeply in dark cozy bedroom, soft blue moonlight through curtains, peaceful expression, cinematic 8k"
+- "Photorealistic photo of male boxer shadowboxing in dim gym, sweat flying, dramatic rim lighting, focus and power, 8k"
+- "Photorealistic photo of fit woman doing yoga warrior pose on rooftop at sunrise, golden light, athletic body, minimal outfit, 8k"
+- "Photorealistic photo of elderly man jogging in park at dawn, energetic posture, morning mist, hyperrealistic 8k"
 
-PEXELS QUERY RULES:
-- BE SPECIFIC AND VISUAL. NEVER use abstract words like "energy", "metabolism", "vitality", "concept", "depletion".
-- Describe a CONCRETE SCENE: "young woman holding stomach in pain", "man drinking water at sunrise", "person sleeping in bed"
-- 3-6 words max. NO multiple commas. NO cinematic adjectives.
-- BAD: "metabolism concept energy conversion" → returns random stock crap
-- GOOD: "woman holding hungry stomach" → returns clear photo
+**FOOD / SUPPLEMENT / OBJECT**:
+"Photorealistic [food item] shot, [plating/setting], [lighting style], food photography, 8k"
+Examples:
+- "Photorealistic overhead shot of fresh salmon fillet with lemon slices and herbs on dark slate, moody restaurant lighting, food photography 8k"
+- "Photorealistic close-up of vitamin D capsules spilling from bottle on wooden surface, warm light, macro lens, 8k"
+- "Photorealistic glass of water with ice cubes on marble surface, condensation drops, minimal studio lighting, 8k"
+
+**ANATOMY / BIOLOGY** (ONLY when topic is literally about internal organs, cells, molecules):
+"Photorealistic 3D scientific render of [specific organ/cell/molecule], [anatomical details], dramatic studio lighting, medical textbook quality, 8k"
+Examples:
+- "Photorealistic 3D render of human brain cross-section, hippocampus highlighted in blue, neural pathways glowing, dark background, medical 8k"
+- "Photorealistic 3D render of gut microbiome, diverse bacteria colonies, bioluminescent glow, scientific accuracy, dramatic lighting, 8k"
+- "Photorealistic 3D render of mitochondria inside cell, energy production ATP molecules glowing orange, dark blue background, 8k"
+⚠️ NEVER use heart for non-cardiovascular topics. Match organ EXACTLY to topic.
+
+**ENVIRONMENT / MOOD**:
+"Photorealistic [environment description], [mood/lighting], cinematic wide shot, 8k"
+Examples:
+- "Photorealistic dim hospital corridor at night, one nurse walking in distance, fluorescent light flicker, cinematic 8k"
+- "Photorealistic modern home kitchen at dawn, glass of water and vitamins on counter, warm light, minimal, 8k"
+
+### VARIETY RULE — HARD ENFORCE:
+Within one carousel, rotate scene types. NEVER two anatomy renders in a row. NEVER two action shots in a row. Mix:
+Slide 1 (Hero): Action/Athlete OR Object → catches eye immediately
+Slide 2: Anatomy render if topic requires, else environment
+Slide 3: Different person (different gender, age, activity)
+Slide 4: Food/Object OR Macro/close-up
+Slide 5+: Keep rotating
+
+### TOPIC → SCENE MAP:
+| Topic | Hero ai_prompt style |
+|-------|---------------------|
+| Fitness / workout / HIIT / muscle | Athletic person lifting/running/boxing — NO anatomy |
+| Sleep / circadian / melatonin | Person sleeping in dark bedroom — NO anatomy |
+| Fasting / weight loss | Person silhouette at sunrise OR food being refused |
+| Nutrition / vitamins / food | The actual food/supplement in beautiful lighting |
+| Stress / anxiety / cortisol | Person in nature, alone, thoughtful — NO anatomy |
+| Cardiovascular / heart / blood pressure | Heart anatomy render OR person clutching chest |
+| Brain / neurology / ADHD | Brain render OR person studying intensely |
+| Gut / microbiome | Gut render OR person holding stomach |
+| Hormones / endocrine | Relevant gland render OR person reacting to symptom |
+| Aging / longevity | Older athlete active OR cellular aging render |
+| Women's health | Female silhouette OR woman doing relevant activity |
 
 ### Hero slide visual rule:
 Hero must have STRONG VISUAL HOOK. Either:
