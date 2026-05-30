@@ -46,17 +46,23 @@ QUALITY BAR — each topic must be:
 - HOOK-WORTHY (contains numbers, percentages, hormones, body systems, specific research findings)
 - NICHE: medical, biological, anatomical, physiological — NOT generic lifestyle/wellness fluff
 
-CATEGORIES TO ROTATE (mix evenly):
+CATEGORIES TO ROTATE — distribute evenly, roughly equal per category:
 1. HORMONES (cortisol, insulin, dopamine, testosterone, estrogen, melatonin, leptin, ghrelin)
-2. ORGANS & SYSTEMS (liver detox, gut microbiome, brain plasticity, kidney filtration, lymphatic flow)
-3. SLEEP & CIRCADIAN (sleep stages, REM, melatonin, jet lag biology)
-4. FASTING & METABOLISM (autophagy, ketosis, insulin sensitivity, mitochondrial function)
-5. NUTRITION SCIENCE (vitamin deficiencies, mineral interactions, bioavailability)
-6. NEURO & MENTAL (anxiety mechanisms, focus chemistry, depression biology)
-7. EXERCISE PHYSIOLOGY (HIIT vs steady, muscle protein synthesis, post-workout recovery)
-8. AGING & LONGEVITY (telomeres, NAD+, mTOR, senescent cells)
-9. STRESS PHYSIOLOGY (HPA axis, fight-or-flight, vagal tone)
-10. WOMEN'S HEALTH (menstrual cycle phases, perimenopause, fertility biology)
+2. BRAIN & NEURO (brain plasticity, neural pathways, dopamine, ADHD, focus, memory, anxiety)
+3. GUT & DIGESTION (microbiome, gut-brain axis, leaky gut, liver detox, IBS, digestion timing)
+4. SLEEP & CIRCADIAN (sleep stages, REM, melatonin, jet lag, circadian clock, sleep debt)
+5. FASTING & METABOLISM (autophagy, ketosis, insulin sensitivity, mitochondria, glycogen)
+6. NUTRITION & VITAMINS (vitamin D, magnesium, omega-3, deficiencies, bioavailability, iron)
+7. EXERCISE PHYSIOLOGY (HIIT, muscle synthesis, recovery, VO2max, lactic acid, soreness)
+8. AGING & LONGEVITY (telomeres, NAD+, mTOR, senescent cells, mitochondrial decay)
+9. STRESS & IMMUNITY (HPA axis, cortisol cascade, inflammation, immune response, lymphatic)
+10. WOMEN'S HEALTH (menstrual phases, perimenopause, PCOS, fertility, estrogen dominance)
+
+⚠️ STRICT LIMIT: Maximum 1-2 topics about heart/cardiovascular per batch.
+Heart = arteries, heart rate, HRV, cardiac, arrhythmia, blood pressure, coronary.
+DO NOT cluster same-category topics together — alternate categories every topic.
+WRONG order: heart, heart, heart, brain, brain → BANNED
+CORRECT order: brain, gut, hormones, sleep, fasting, nutrition, heart (max 1), exercise → GOOD
 
 FORMAT:
 - One topic per line
