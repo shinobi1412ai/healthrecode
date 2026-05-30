@@ -239,14 +239,34 @@ Slide 5+: Keep rotating
 | Aging / longevity | Older athlete active OR cellular aging render |
 | Women's health | Female silhouette OR woman doing relevant activity |
 
+### PER-SLIDE IMAGE ASSIGNMENT (MANDATORY — READ THIS CAREFULLY):
+
+Every single slide in the carousel MUST have a DIFFERENT scene type. NO two slides can have the same category of image. Plan all images BEFORE writing the JSON.
+
+**For a 7-slide carousel, assign one category per slide:**
+| Slide | Category | Example |
+|-------|----------|---------|
+| 1 (Hero) | Person in action / athlete | Woman lifting weights, man running |
+| 2 | Food or object | Specific food, supplement, equipment |
+| 3 | Environment / mood | Gym interior, bedroom, kitchen, lab |
+| 4 | Anatomy render (ONLY if relevant) | Specific organ — NOT heart unless cardiovascular topic |
+| 5 | Different person (other gender/age) | Older man, young woman, athlete of different type |
+| 6 | Close-up / body part / macro | Hand, muscle detail, skin, blood drop, pill |
+| 7 | Silhouette or wide cinematic shot | Person at window, rooftop, nature scene |
+
+⚠️ HARD RULES FOR ALL SLIDES:
+- NEVER use "cells" or "generic anatomy" as a default when you don't know what to pick
+- NEVER repeat the same scene (no 2 gym shots, no 2 anatomy renders, no 2 food shots)
+- NEVER use heart render unless topic is EXPLICITLY about heart/cardiovascular system
+- EVERY ai_prompt must be UNIQUE and SPECIFIC — no copy-paste between slides
+- Slide 1 MUST show a person or powerful object — never start with anatomy
+- Anatomy renders MAX 1-2 per carousel, only when biologically necessary
+
 ### Hero slide visual rule:
-Hero must have STRONG VISUAL HOOK. Either:
-- AI render of the topic's core anatomy (e.g., for "72h fasting" → AI render of human cell regenerating)
-- OR a Pexels photo with EMOTION (e.g., "man hungry weak tired" — shows the topic's effect on body)
-NEVER use random "person meditating" or "person sunset" for hero. Hero must HOOK.
+Person in action OR powerful object that instantly communicates the topic. NEVER anatomy for hero.
 
 ### Final/CTA slide visual rule:
-Strong takeaway visual. AI render of the topic's RESULT (e.g., regenerated cells, healthy organ) OR strong action photo.
+Wide cinematic shot or silhouette — something visually different from all previous slides.
 
 ## LIST/TIPS SLIDE (NEW — use this for actionable content)
 For carousels about TIPS, STEPS, SIGNS, RECOMMENDATIONS, DO'S/DON'TS, RULES, HABITS, MISTAKES:
