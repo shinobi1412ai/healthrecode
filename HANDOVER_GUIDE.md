@@ -4,6 +4,98 @@
 
 ---
 
+## ⚡ SESSION HANDOFF — Was zuletzt gemacht wurde (07.06.2026)
+
+### Was der vorherige Agent empfangen hat:
+- Vollautomatische Instagram Carousel Pipeline für @healthrecode
+- Läuft via GitHub Actions 2x täglich (02:00 UTC Generierung, 08:00 + 16:00 UTC Posting)
+- Stack: Gemini Flash (Text/Slide-Plan) → Pollinations.ai (Bilder) → Playwright (PNG Export) → Cloudinary (Hosting) → Instagram + Facebook Graph API (Posting)
+- Lokales Projekt: `C:\Users\myshi\Documents\Claude\Projects\Medical-Stuff`
+- GitHub Repo: https://github.com/shinobi1412ai/healthrecode
+- IG: @healthrecode | Brand-Color: `#00CFE8` (Cyan) | IG_USER_ID: 17841408331390991
+
+### Was der vorherige Agent gemacht hat (alle Änderungen committed & gepusht):
+
+#### 1. ✅ Facebook Cross-Posting aktiviert
+- **Problem:** Posts erschienen nur in FB-Galerie, nicht im Haupt-Feed
+- **Status:** `post_from_queue.py` + `cloud_pipeline.py` hatten `post_to_facebook()` bereits fertig implementiert
+- **Fix:** `FB_PAGE_ACCESS_TOKEN` + `FB_PAGE_ID` müssen als GitHub Secrets gesetzt sein
+- **Ergebnis:** Letzten 2 Posts zeigen `fb_posted: 1005844132621772_...` ✅
+
+#### 2. ✅ Success-Email entfernt (nur noch Fehler-Email)
+- **Datei:** `.github/workflows/post_from_queue.yml`
+- **Commit:** "Remove success email — only notify on failure"
+- Kein Email mehr bei erfolgreichem Post, nur noch bei Fehler
+
+#### 3. ✅ Bildgenerierung auf Pollinations.ai umgestellt (100% gratis)
+- **Vorher:** Together AI FLUX 1.1 Pro → $0.04/Bild (~$7-10/Monat)
+- **Jetzt:** Pollinations.ai → $0/Bild (FLUX-Qualität, kein API-Key nötig)
+- **Datei:** `generate_carousel.py` → `fetch_ai_image()`
+- **Fallback:** Together AI bleibt als Backup wenn Pollinations ausfällt
+- **Getestet:** ✅ Anatomie-Herz-Bild erfolgreich generiert (56KB)
+- **Commit:** "Switch AI images to Pollinations.ai (100% free, no key, FLUX)"
+- **Warum NICHT Gemini:** Imagen 3 → 403 "project denied", Gemini 2.5 Flash Image → limit: 0 (kein Free Tier für Bilder)
+
+#### 4. ✅ Slide-Planner: Bild-Varietät erzwungen (kein Herz-Default mehr)
+- **Problem:** Hero-Slide war fast immer ein Herz-Render, alle Content-Slides zeigten Zellen/generische Anatomie
+- **Fix 1:** `slide_planner.py` — Neue strikte Topic→Bild-Zuordnung:
+  - Fitness/Training → Athlet, Frau hebt Gewichte, Mann sprintet (KEIN Anatomie-Render)
+  - Schlaf → Person schläft im dunklen Zimmer
+  - Stress/Mental → Frau allein am Fenster, Person in Natur
+  - Anatomie-Render nur noch für rein biologische/molekulare Themen
+- **Fix 2:** Per-Slide-Varietät erzwungen: 7 Slides = 7 verschiedene Szenen-Kategorien
+  - Slide 1: Person in Aktion / Athlet
+  - Slide 2: Essen / Objekt
+  - Slide 3: Umgebung / Raum
+  - Slide 4: Anatomie (max 1-2x, nur wenn nötig)
+  - Slide 5: Andere Person (anderes Geschlecht/Alter)
+  - Slide 6: Close-up / Körperteil
+  - Slide 7: Silhouette / Cinematic Wide
+- **Commits:** "Force real people/athletes..." + "Force unique scene per slide..."
+
+#### 5. 🆕 Brand-Figur Konzept (noch nicht implementiert)
+- **Idee:** Weise Heilerin aus dem antiken Griechenland/Mittelmeer als Gesicht von Health Recode
+- **Character:** Mid-50s, silver-streaked dark hair, olive skin, linen robe, surrounded by herbs/clay pots
+- **Zweck:** Talking-Head Videos, Brand Spokesperson, "Ancient wisdom meets modern science"
+- **Nächster Schritt:** User testet Higgsfield-Prompts → beste Version auswählen → Charakter für Video-Slides nutzen
+- **Higgsfield Prompts:** Siehe letzte Chat-Nachrichten (6 Prompts mit Studio/Kitchen/Nature/Mystic/Fitness/Podcast Varianten)
+
+### Aktueller System-Status:
+| Komponente | Status |
+|---|---|
+| GitHub Actions Cron | ✅ Läuft (02:00 + 08:00 + 16:00 UTC) |
+| Instagram Posting | ✅ Funktioniert |
+| Facebook Posting | ✅ Funktioniert (seit 03.05.2026) |
+| Bildgenerierung | ✅ Pollinations.ai (gratis) |
+| Slide-Planner | ✅ Aktualisiert (Varietät erzwungen) |
+| Topics Auto-Refill | ✅ Gemini generiert bei <50 Topics neue |
+| Token Refresh | ✅ `refresh_ig_token.yml` Workflow vorhanden |
+| Failure Email | ✅ Aktiv (makevision1412@gmail.com) |
+| Success Email | ❌ Entfernt (war nervig) |
+
+### Offene Todos für nächste Session:
+1. **Brand-Figur testen** → User hat Higgsfield-Prompts bekommen, wartet auf Ergebnis
+2. **FB_PAGE_ACCESS_TOKEN ablaufen?** → Prüfen ob Secrets noch gültig (Page Tokens laufen nie ab wenn richtig generiert)
+3. **Bild-Qualität prüfen** → Nach nächstem Cron-Run: screenshots von neuen Posts anschauen ob Varietät besser ist
+4. **Evtl. Video-Slides** → Wenn Brand-Figur steht: kurze Video-Loops als Carousel-Slides
+
+### Quick Commands:
+```powershell
+# In Projekt navigieren
+cd "C:\Users\myshi\Documents\Claude\Projects\Medical-Stuff"
+
+# Letzten Post-Status prüfen
+py -c "import json; from pathlib import Path; posts=sorted(Path('posted').glob('POST_*.json'))[-3:]; [print(json.loads(p.read_text(encoding='utf-8')).get('topic'),'→ IG:',json.loads(p.read_text(encoding='utf-8')).get('instagram_status'),'FB:',json.loads(p.read_text(encoding='utf-8')).get('facebook_status')) for p in posts]"
+
+# Manuell 1 Carousel testen (ohne posten)
+py cloud_pipeline.py "Vitamin D deficiency" --upload
+
+# GitHub Actions Log prüfen
+# → https://github.com/shinobi1412ai/healthrecode/actions
+```
+
+---
+
 ## 1. Was dieses Projekt macht
 
 Vollautomatischer **Instagram-Carousel-Generator** für medizinische/Health-Anatomie-Inhalte:
