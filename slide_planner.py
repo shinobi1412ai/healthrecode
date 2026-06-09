@@ -400,7 +400,7 @@ def call_gemini(topic: str, language: str = "en", max_retries: int = 3) -> dict:
     for attempt in range(max_retries):
         try:
             r = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_KEY}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={GEMINI_KEY}",
                 json={
                     "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
                     "contents": [{"role": "user", "parts": [{"text": user_msg}]}],
