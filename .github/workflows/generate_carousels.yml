@@ -84,6 +84,7 @@ jobs:
           IG_APP_ID=${{ secrets.IG_APP_ID }}
           IG_APP_SECRET=${{ secrets.IG_APP_SECRET }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
           EOF
 
       - name: Auto-refill topics (aggressive — keep buffer at 100)

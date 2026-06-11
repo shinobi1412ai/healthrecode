@@ -21,6 +21,7 @@ load_dotenv(Path(__file__).parent / ".env")
 
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+GROQ_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 
 SYSTEM_PROMPT = """You are a medical Instagram content strategist for the brand "Health Recode".
 You generate carousel plans for educational health/anatomy content in the style of
@@ -362,6 +363,35 @@ they are automatically appended by the pipeline after your content slides.
 """
 
 
+def call_groq(topic: str, language: str = "en") -> dict:
+    """Generiert Slide-Plan via Groq (Llama 3.3 70B). Kostenlos, 14.400 req/Tag."""
+    if not GROQ_KEY:
+        raise RuntimeError("GROQ_API_KEY fehlt in .env")
+
+    user_msg = f'Generate a 7-slide medical carousel plan for topic: "{topic}". Language: {language}.'
+    r = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {GROQ_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_msg},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 4000,
+        },
+        timeout=60,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Groq API fail: {r.status_code} {r.text[:300]}")
+    text = r.json()["choices"][0]["message"]["content"]
+    return _parse_json(text)
+
+
 def call_anthropic(topic: str, language: str = "en") -> dict:
     """Generiert Slide-Plan via Claude Haiku API. Sehr günstig (~$0,001 pro Plan)."""
     if not ANTHROPIC_KEY:
@@ -483,13 +513,20 @@ def _parse_json(text: str) -> dict:
 def plan_slides(topic: str, language: str = "en", backend: str = "auto") -> dict:
     """Generiert einen vollständigen Slide-Plan.
 
-    backend: 'gemini' (kostenlos), 'anthropic' (Haiku, sehr günstig), 'auto' (erst Gemini, fallback Anthropic)
+    backend: 'groq' (kostenlos, primär), 'gemini' (kostenlos), 'anthropic' (Haiku, günstig), 'auto' (Groq → Gemini → Anthropic)
     """
     if backend == "anthropic":
         return call_anthropic(topic, language)
     if backend == "gemini":
         return call_gemini(topic, language)
-    # auto: erst Gemini (gratis), Fallback Anthropic
+    if backend == "groq":
+        return call_groq(topic, language)
+    # auto: Groq (primär, kostenlos) → Gemini (fallback) → Anthropic (letzter Ausweg)
+    if GROQ_KEY:
+        try:
+            return call_groq(topic, language)
+        except Exception as e:
+            print(f"  Groq failed ({e}), trying Gemini...", file=sys.stderr)
     if GEMINI_KEY:
         try:
             return call_gemini(topic, language)
