@@ -365,31 +365,39 @@ they are automatically appended by the pipeline after your content slides.
 
 def call_groq(topic: str, language: str = "en") -> dict:
     """Generiert Slide-Plan via Groq (Llama 3.3 70B). Kostenlos, 14.400 req/Tag."""
+    import time
     if not GROQ_KEY:
         raise RuntimeError("GROQ_API_KEY fehlt in .env")
 
     user_msg = f'Generate a 7-slide medical carousel plan for topic: "{topic}". Language: {language}.'
-    r = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {GROQ_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
-            "temperature": 0.7,
-            "max_tokens": 4000,
-        },
-        timeout=60,
-    )
-    if r.status_code != 200:
+    for attempt in range(3):
+        r = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_msg},
+                ],
+                "temperature": 0.7,
+                "max_tokens": 3000,
+            },
+            timeout=60,
+        )
+        if r.status_code == 200:
+            text = r.json()["choices"][0]["message"]["content"]
+            return _parse_json(text)
+        if r.status_code == 429:
+            wait = 15 * (attempt + 1)
+            print(f"  Groq rate limit, retry in {wait}s...", file=sys.stderr)
+            time.sleep(wait)
+            continue
         raise RuntimeError(f"Groq API fail: {r.status_code} {r.text[:300]}")
-    text = r.json()["choices"][0]["message"]["content"]
-    return _parse_json(text)
+    raise RuntimeError("Groq API fail nach 3 Retries (Rate Limit)")
 
 
 def call_anthropic(topic: str, language: str = "en") -> dict:

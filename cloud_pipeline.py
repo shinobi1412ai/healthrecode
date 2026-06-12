@@ -141,6 +141,24 @@ def run_pipeline(topic: str, language: str = "en", backend: str = "auto",
     return summary
 
 
+def _fix_parts(raw):
+    """Normalisiert AI-generierte headline/subhead_parts zu sauberen (text, modifier) Tupeln.
+    Schützt gegen: einzelne Strings, 1-Element-Listen, None-Einträge."""
+    if not raw:
+        return [("", "regular")]
+    result = []
+    for p in raw:
+        if isinstance(p, (list, tuple)) and len(p) >= 2:
+            result.append((str(p[0]), str(p[1])))
+        elif isinstance(p, (list, tuple)) and len(p) == 1:
+            result.append((str(p[0]), "regular"))
+        elif isinstance(p, str):
+            result.append((p, "regular"))
+        else:
+            result.append((str(p) if p else "", "regular"))
+    return result if result else [("", "regular")]
+
+
 def _normalize_slide(s: dict) -> dict:
     """Stellt sicher, dass JSON-Plan zu generate_carousel.SLIDES Format passt.
     Defensiv: alle Felder optional, Pass-Through für google_query/ai_render."""
@@ -149,8 +167,8 @@ def _normalize_slide(s: dict) -> dict:
     return {
         "type": s.get("type", "content"),
         "tag": s.get("tag", ""),
-        "headline_parts": [tuple(p) for p in s.get("headline_parts", [])],
-        "subhead_parts": [tuple(p) for p in s["subhead_parts"]] if s.get("subhead_parts") else None,
+        "headline_parts": _fix_parts(s.get("headline_parts", [])),
+        "subhead_parts": _fix_parts(s["subhead_parts"]) if s.get("subhead_parts") else None,
         "subline": s.get("subline", ""),
         "pexels_query": s.get("pexels_query", "minimalist health aesthetic"),
         "pexels_color": s.get("pexels_color"),
