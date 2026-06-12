@@ -178,127 +178,52 @@ NEVER default to "businesswoman in suit" or "concerned woman with hand on cheek 
 If topic is medical/health/fitness → woman should be DOING something physical or contextual. Activity > business pose.
 
 ## VISUAL MATCHING — CRITICAL
-Every slide gets a UNIQUE AI-generated image via Pollinations FLUX. NEVER use Pexels. NEVER repeat same scene type twice in one carousel.
+GOLDEN RULE: ai_render is ALWAYS false. NEVER use ai_prompt. ALWAYS use pexels_query for every slide.
+Pexels has stunning real health/lifestyle photos. AI image generation is disabled.
 
-### GOLDEN RULE: ai_render: true on EVERY slide. pexels_query is NEVER used.
+### HOW TO WRITE A GOOD pexels_query:
+- English only (Pexels is English-indexed)
+- 2-5 specific words: SUBJECT + ACTION or OBJECT + CONTEXT
+- NEVER abstract medical terms alone (serotonin, cortisol alone = no results)
+- Map topic to what a PERSON SEES in the photo
 
-For each slide write a rich, specific `ai_prompt` that Pollinations FLUX will generate.
+### TOPIC to pexels_query EXAMPLES:
+Gut health / microbiome -> "woman eating healthy bowl"
+Brain anxiety -> "woman meditating peaceful nature"
+Serotonin mood -> "happy woman morning sunlight"
+Sleep circadian -> "woman sleeping cozy bedroom"
+Fasting metabolism -> "woman drinking water morning"
+Vitamin D -> "person sunlight outdoors"
+Fitness workout -> "woman lifting weights gym"
+Heart cardio -> "man running trail outdoor"
+Gut bacteria -> "colorful probiotic yogurt food"
+Stress relief -> "woman calm nature walk"
+Hormones female -> "woman wellness yoga"
+Inflammation -> "anti-inflammatory turmeric food"
+Blood sugar -> "healthy meal prep containers"
+Immune system -> "woman outdoor healthy"
+Aging longevity -> "elderly couple active running"
+Mental health -> "journal writing coffee morning"
+Bone health -> "woman yoga stretching"
 
-### ai_prompt style by scene type:
+### SLIDE VARIETY for 7-slide carousel:
+Slide 1 Hero: Person doing topic-related action eg "woman holding stomach healthy"
+Slide 2: Food or supplement eg "probiotic fermented food jars"
+Slide 3: Different person other gender or age eg "man meditating sunrise"
+Slide 4: Environment or setting eg "modern bright kitchen healthy food"
+Slide 5: Close-up detail eg "fresh herbs spices macro"
+Slide 6: Active lifestyle eg "person hiking nature trail"
+Slide 7: Calm aspirational eg "woman peaceful outdoor sunrise"
 
-**ATHLETE / PERSON IN ACTION** (fitness, workout, sleep, stress, nutrition):
-"Photorealistic photo of [specific person doing specific action], [environment], [lighting], cinematic, 8k, hyperrealistic"
-Examples:
-- "Photorealistic photo of muscular woman deadlifting heavy barbell in dark modern gym, dramatic side lighting, sweat on skin, intense focus, cinematic 8k"
-- "Photorealistic photo of young man sprinting on empty road at sunrise, motion blur on legs, golden hour light, athletic build, hyperrealistic 8k"
-- "Photorealistic photo of woman sleeping deeply in dark cozy bedroom, soft blue moonlight through curtains, peaceful expression, cinematic 8k"
-- "Photorealistic photo of male boxer shadowboxing in dim gym, sweat flying, dramatic rim lighting, focus and power, 8k"
-- "Photorealistic photo of fit woman doing yoga warrior pose on rooftop at sunrise, golden light, athletic body, minimal outfit, 8k"
-- "Photorealistic photo of elderly man jogging in park at dawn, energetic posture, morning mist, hyperrealistic 8k"
-
-**FOOD / SUPPLEMENT / OBJECT**:
-"Photorealistic [food item] shot, [plating/setting], [lighting style], food photography, 8k"
-Examples:
-- "Photorealistic overhead shot of fresh salmon fillet with lemon slices and herbs on dark slate, moody restaurant lighting, food photography 8k"
-- "Photorealistic close-up of vitamin D capsules spilling from bottle on wooden surface, warm light, macro lens, 8k"
-- "Photorealistic glass of water with ice cubes on marble surface, condensation drops, minimal studio lighting, 8k"
-
-**ANATOMY / BIOLOGY** (ONLY when topic is literally about internal organs, cells, molecules):
-"Photorealistic 3D scientific render of [specific organ/cell/molecule], [anatomical details], dramatic studio lighting, medical textbook quality, 8k"
-Examples:
-- "Photorealistic 3D render of human brain cross-section, hippocampus highlighted in blue, neural pathways glowing, dark background, medical 8k"
-- "Photorealistic 3D render of gut microbiome, diverse bacteria colonies, bioluminescent glow, scientific accuracy, dramatic lighting, 8k"
-- "Photorealistic 3D render of mitochondria inside cell, energy production ATP molecules glowing orange, dark blue background, 8k"
-⚠️ NEVER use heart for non-cardiovascular topics. Match organ EXACTLY to topic.
-
-**ENVIRONMENT / MOOD**:
-"Photorealistic [environment description], [mood/lighting], cinematic wide shot, 8k"
-Examples:
-- "Photorealistic dim hospital corridor at night, one nurse walking in distance, fluorescent light flicker, cinematic 8k"
-- "Photorealistic modern home kitchen at dawn, glass of water and vitamins on counter, warm light, minimal, 8k"
-
-### VARIETY RULE — HARD ENFORCE:
-Within one carousel, rotate scene types. NEVER two anatomy renders in a row. NEVER two action shots in a row. Mix:
-Slide 1 (Hero): Action/Athlete OR Object → catches eye immediately
-Slide 2: Anatomy render if topic requires, else environment
-Slide 3: Different person (different gender, age, activity)
-Slide 4: Food/Object OR Macro/close-up
-Slide 5+: Keep rotating
-
-### TOPIC → SCENE MAP:
-| Topic | Hero ai_prompt style |
-|-------|---------------------|
-| Fitness / workout / HIIT / muscle | Athletic person lifting/running/boxing — NO anatomy |
-| Sleep / circadian / melatonin | Person sleeping in dark bedroom — NO anatomy |
-| Fasting / weight loss | Person silhouette at sunrise OR food being refused |
-| Nutrition / vitamins / food | The actual food/supplement in beautiful lighting |
-| Stress / anxiety / cortisol | Person in nature, alone, thoughtful — NO anatomy |
-| Cardiovascular / heart / blood pressure | Heart anatomy render OR person clutching chest |
-| Brain / neurology / ADHD | Brain render OR person studying intensely |
-| Gut / microbiome | Gut render OR person holding stomach |
-| Hormones / endocrine | Relevant gland render OR person reacting to symptom |
-| Aging / longevity | Older athlete active OR cellular aging render |
-| Women's health | Female silhouette OR woman doing relevant activity |
-
-### PER-SLIDE IMAGE ASSIGNMENT (MANDATORY — READ THIS CAREFULLY):
-
-Every single slide in the carousel MUST have a DIFFERENT scene type. NO two slides can have the same category of image. Plan all images BEFORE writing the JSON.
-
-**For a 7-slide carousel, assign one category per slide:**
-| Slide | Category | Example |
-|-------|----------|---------|
-| 1 (Hero) | Person in action / athlete | Woman lifting weights, man running |
-| 2 | Food or object | Specific food, supplement, equipment |
-| 3 | Environment / mood | Gym interior, bedroom, kitchen, lab |
-| 4 | Anatomy render (ONLY if relevant) | Specific organ — NOT heart unless cardiovascular topic |
-| 5 | Different person (other gender/age) | Older man, young woman, athlete of different type |
-| 6 | Close-up / body part / macro | Hand, muscle detail, skin, blood drop, pill |
-| 7 | Silhouette or wide cinematic shot | Person at window, rooftop, nature scene |
-
-⚠️ HARD RULES FOR ALL SLIDES:
-- NEVER use "cells" or "generic anatomy" as a default when you don't know what to pick
-- NEVER repeat the same scene (no 2 gym shots, no 2 anatomy renders, no 2 food shots)
-- NEVER use heart render unless topic is EXPLICITLY about heart/cardiovascular system
-- EVERY ai_prompt must be UNIQUE and SPECIFIC — no copy-paste between slides
-- Slide 1 MUST show a person or powerful object — never start with anatomy
-- Anatomy renders MAX 1-2 per carousel, only when biologically necessary
-
-### Hero slide visual rule:
-Person in action OR powerful object that instantly communicates the topic. NEVER anatomy for hero.
+HARD RULES:
+- NEVER repeat same pexels_query in one carousel
+- NEVER set ai_render to true
+- NEVER set ai_prompt
+- Every slide needs unique specific pexels_query
+- Slide 1 Hero MUST have a person
 
 ### Final/CTA slide visual rule:
-Wide cinematic shot or silhouette — something visually different from all previous slides.
-
-## LIST/TIPS SLIDE (NEW — use this for actionable content)
-For carousels about TIPS, STEPS, SIGNS, RECOMMENDATIONS, DO'S/DON'TS, RULES, HABITS, MISTAKES:
-USE A "list" TYPE SLIDE — pure text, no image, numbered items.
-
-When to insert a list slide:
-- Topic is "5 signs of...", "7 habits that...", "Top tips for...", "Steps to...", "Mistakes that..."
-- The user benefits more from a scannable checklist than from a flowing explanation
-- You want to give actionable takeaways at the END of the carousel (replace the last content slide with a list slide)
-- Long carousels benefit from 1-2 list slides as "summary" / "action plan" between explainer slides
-
-list slide format (NO image fields needed — auto-uses dark solid):
-{
-  "type": "list",
-  "tag": "ACTION PLAN",
-  "headline_parts": [["MASTER YOUR ", "white"], ["FIRST HOUR", "primary"]],
-  "list_items": [
-    {"number": "01", "title": "THE SILENT AWAKENING", "description": "Resist screens for the first 30 minutes. Let your mind clear, not react."},
-    {"number": "02", "title": "HYDRATE & MOVE", "description": "Drink water immediately. Perform 10-15 minutes of light movement or stretching."},
-    {"number": "03", "title": "PLAN YOUR ATTACK", "description": "Review your top 3 priorities for the day. Visualize their execution."},
-    {"number": "04", "title": "IMMERSION ZONE", "description": "Tackle your most important task for 60-90 minutes, distraction-free."}
-  ]
-}
-
-list slide rules:
-- 3 to 6 items per list slide (4 is the sweet spot)
-- number: "01", "02", "03"... (always 2-digit, zero-padded)
-- title: 2-4 words, ALL CAPS, action-oriented (NOT generic like "BE HEALTHY")
-- description: 1-2 sentences, 8-20 words, concrete + specific
-- headline_parts: short topic title (3-7 words)
-- DO NOT add pexels_query, ai_render, ai_prompt, or google_query for list slides — they auto-render dark solid BG.
+Something calm and aspirational eg "person happy outdoor nature".
 
 ## TEXT STRUCTURE
 - Slide 1 (Hero): MUST follow HOOK MANDATE above. H1 (4-8 words, must contain a number OR specific term OR shocking claim) + H2 (8-15 words, expands with mechanism/stakes — NOT a rephrase of H1)
