@@ -1,4 +1,4 @@
-"""
+﻿"""
 post_from_queue.py — Postet das ÄLTESTE Carousel aus queue/ zu Instagram.
 
 Workflow:
@@ -117,9 +117,18 @@ def post_to_instagram(image_urls: list, caption: str) -> str:
 
     BASE = "https://graph.instagram.com/v22.0"
     try:
+        # Instagram Carousel erfordert JPEG. PNG-Cloudinary-URLs on-the-fly zu JPEG konvertieren.
+        def _ensure_jpeg(url: str) -> str:
+            import re
+            if "res.cloudinary.com" in url and url.endswith(".png"):
+                # Cloudinary URL-Transformation: f_jpg,q_auto:good einfügen
+                return re.sub(r"/upload/", "/upload/f_jpg,q_auto:good/", url, count=1)
+            return url
+
         # Step 1: Carousel-Item-Container erstellen
         container_ids = []
         for i, url in enumerate(image_urls):
+            url = _ensure_jpeg(url)
             r = requests.post(
                 f"{BASE}/{ig_id}/media",
                 params={
@@ -259,3 +268,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

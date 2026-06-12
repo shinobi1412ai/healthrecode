@@ -1,4 +1,4 @@
-"""
+﻿"""
 cloud_pipeline.py — Master-Orchestrator für volle Auto-Pipeline.
 
 Topic in → fertiges Carousel + Caption + (optional) Posting raus.
@@ -189,9 +189,11 @@ def upload_to_cloudinary(timestamp: str) -> list[str]:
             public_id=f"medical_{timestamp}_slide_{i}",
             folder="medical-insta",
             overwrite=True,
+            format="jpg",          # Instagram Carousel erfordert JPEG, kein PNG
+            quality="auto:good",
         )
         urls.append(result["secure_url"])
-        print(f"  Uploaded {f.name}")
+        print(f"  Uploaded {f.name} → JPEG")
     return urls
 
 
@@ -339,3 +341,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
