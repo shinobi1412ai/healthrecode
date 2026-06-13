@@ -1,13 +1,9 @@
-name: Generate Carousels (Off-Peak)
+name: Generate Carousels + Reels (Off-Peak)
 
-# Läuft täglich um 02:00 UTC = 03:00 Uhr DE (Winter) / 04:00 Uhr DE (Sommer)
-# Begründung: Gemini & Together AI haben um diese Zeit den niedrigsten globalen Load
-# (EU schläft, Asien-Peak ist 06-09 UTC, US-Westcoast ist Abend).
-# 503 "high demand" Fehler treten ~80% seltener auf als tagsüber.
-#
-# Generiert 2 Carousels pro Lauf (für Morgen-Post + Abend-Post desselben Tages),
-# lädt sie zu Cloudinary und legt sie in queue/POST_*.json ab.
-# Das eigentliche Posten erfolgt durch post_from_queue.yml zur IG-Engagement-Peak-Zeit.
+# Läuft täglich um 02:00 UTC = 03:00 Uhr DE
+# Generiert 2 Carousels + 2 Reels pro Lauf.
+# Reels = selbe Pexels-Bilder + edge-tts Voice + Ken-Burns-Zoom
+# Carousel (POST_*.json) + Reel (REEL_*.json) landen in queue/
 
 on:
   workflow_dispatch:
@@ -17,12 +13,15 @@ on:
         required: false
         default: ""
       count:
-        description: "Anzahl Carousels in diesem Lauf (Default 2)"
+        description: "Anzahl Carousel+Reel Paare (Default 2)"
         required: false
         default: "2"
+      skip_reel:
+        description: "Reel-Generation überspringen? (true/false)"
+        required: false
+        default: "false"
 
   schedule:
-    # 02:00 UTC = 3 AM CET / 4 AM CEST
     - cron: "0 2 * * *"
 
 permissions:
@@ -31,7 +30,7 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repo
@@ -87,38 +86,39 @@ jobs:
           GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
           EOF
 
-      - name: Auto-refill topics (aggressive — keep buffer at 100)
-        run: |
-          # Marwan will NULL manuelle Pflege:
-          # - Wenn topics.txt < 50: AI generiert neu bis 100 erreicht
-          # - Bei jedem Generate-Run gecheckt (also taeglich)
-          # - Exkludiert automatisch bereits gepostete Topics (aus posted/POST_*.json)
-          python refill_topics.py --min 50 --target 100
+      - name: Auto-refill topics
+        run: python refill_topics.py --min 50 --target 100
 
-      - name: Generate carousels (uploads to Cloudinary, saves to queue/)
+      - name: Generate carousels + reels
         env:
           TOPIC_OVERRIDE: ${{ github.event.inputs.topic }}
           COUNT: ${{ github.event.inputs.count || '2' }}
+          SKIP_REEL: ${{ github.event.inputs.skip_reel || 'false' }}
         run: |
           if [ -n "$TOPIC_OVERRIDE" ]; then
+            echo "=== Carousel (single topic) ==="
             python cloud_pipeline.py "$TOPIC_OVERRIDE" --upload --save-to-queue
+            if [ "$SKIP_REEL" != "true" ]; then
+              echo "=== Reel (single topic) ==="
+              python reel_pipeline.py --save-to-queue || echo "Reel fehlgeschlagen — weiter"
+            fi
           else
             for i in $(seq 1 $COUNT); do
               echo "=== Carousel $i/$COUNT ==="
-              python cloud_pipeline.py --from-queue topics.txt --upload --save-to-queue || echo "Carousel $i fehlgeschlagen — weiter"
+              python cloud_pipeline.py --from-queue topics.txt --upload --save-to-queue || { echo "Carousel $i fehlgeschlagen — weiter"; continue; }
+              if [ "$SKIP_REEL" != "true" ]; then
+                echo "=== Reel $i/$COUNT ==="
+                python reel_pipeline.py --save-to-queue || echo "Reel $i fehlgeschlagen — weiter"
+              fi
               sleep 5
             done
           fi
 
-      - name: Debug — show queue contents
+      - name: Debug — show queue
         if: always()
         run: |
-          echo "=== queue/ directory ==="
-          ls -la queue/ || echo "queue/ doesn't exist"
-          echo ""
-          echo "=== output/ directory ==="
-          ls -la output/ 2>/dev/null | head -20 || echo "output/ doesn't exist"
-          echo ""
+          echo "=== queue/ ==="
+          ls -la queue/ 2>/dev/null || echo "queue/ leer"
           echo "=== git status ==="
           git status
 
@@ -129,25 +129,22 @@ jobs:
           git config user.name "github-actions"
           mkdir -p queue output
           git add -A topics.txt queue/ output/summary_*.json 2>/dev/null || true
-          echo "=== staged files ==="
-          git diff --staged --name-only
           if git diff --staged --quiet; then
-            echo "Nothing to commit — queue is empty?"
+            echo "Nothing to commit"
             exit 0
           fi
-          git commit -m "Auto-generate $(date -u +%Y-%m-%d) — added to queue"
-          echo "=== pushing ==="
+          git commit -m "Auto-generate $(date -u +%Y-%m-%d) — carousel + reel"
           git push
-          echo "=== push successful ==="
 
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: generated-carousels
+          name: generated-content
           path: |
             output/*.png
             output/summary_*.json
+            output/reel_*.mp4
             queue/*.json
           retention-days: 14
 
@@ -160,25 +157,15 @@ jobs:
           secure: true
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASS }}
-          subject: "🚨 Auto Run Bug — Generate Carousels failed"
+          subject: "Auto Run Bug — Generate Carousels+Reels failed"
           to: makevision1412@gmail.com
           from: HealthRecode Pipeline <${{ secrets.SMTP_USER }}>
           body: |
-            ❌ Generate Carousels Workflow ist gescheitert.
+            Generate Carousels+Reels Workflow ist gescheitert.
 
-            Workflow:    ${{ github.workflow }}
-            Repository:  ${{ github.repository }}
-            Trigger:     ${{ github.event_name }}
-            Branch:      ${{ github.ref_name }}
-            Commit:      ${{ github.sha }}
+            Workflow: ${{ github.workflow }}
+            Trigger: ${{ github.event_name }}
 
-            🔗 LOG ANSEHEN:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            Häufigste Ursachen:
-            • Gemini/Anthropic API down → einfach Run neustarten
-            • Pexels Quota erschöpft → bis Mitternacht warten
-            • Cloudinary Upload-Fehler → Quota check
-            • git push blocked → permissions:contents:write check
+            LOG: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             Auto-Pipeline (don't reply)
