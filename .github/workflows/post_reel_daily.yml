@@ -3,7 +3,7 @@ name: Post Reel Daily (IG + FB)
 on:
   workflow_dispatch:        # manuell ausloesbar (fuer den ersten Test)
   schedule:
-    - cron: '0 15 * * *'    # taeglich 15:00 UTC = 1 Reel/Tag
+    - cron: '44 3 * * *'    # taeglich 15:00 UTC = 1 Reel/Tag
 
 concurrency:
   group: post-reel
