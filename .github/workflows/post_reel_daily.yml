@@ -1,0 +1,39 @@
+name: Post Reel Daily (IG + FB)
+
+on:
+  workflow_dispatch:        # manuell ausloesbar (fuer den ersten Test)
+  schedule:
+    - cron: '0 15 * * *'    # taeglich 15:00 UTC = 1 Reel/Tag
+
+concurrency:
+  group: post-reel
+  cancel-in-progress: false
+
+jobs:
+  post-reel:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet requests cloudinary
+      - name: Post next reel
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_USER_ACCESS_TOKEN: ${{ secrets.IG_USER_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: python post_reel_from_queue.py
+      - name: Commit updated queue
+        run: |
+          git config user.name "healthrecode-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add reel_queue.json
+          git commit -m "reel posted $(date -u +%F)" || echo "no change"
+          git push
