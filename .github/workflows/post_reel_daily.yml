@@ -1,9 +1,9 @@
 name: Post Reel Daily (IG + FB)
 
 on:
-  workflow_dispatch:        # manuell ausloesbar (fuer den ersten Test)
+  workflow_dispatch:
   schedule:
-    - cron: '0 15 * * *'    # taeglich 15:00 UTC = 1 Reel/Tag
+    - cron: '0 15 * * *'
 
 concurrency:
   group: post-reel
@@ -19,7 +19,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install --quiet requests cloudinary
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install requests python-dotenv cloudinary
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          IG_USER_ACCESS_TOKEN=${{ secrets.IG_USER_ACCESS_TOKEN }}
+          FB_PAGE_ACCESS_TOKEN=${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
+          IG_USER_ID=${{ secrets.IG_USER_ID }}
+          EOF
       - name: Post next reel
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
